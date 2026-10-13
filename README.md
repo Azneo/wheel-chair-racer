@@ -4,12 +4,16 @@ Spielbarer 3D-Prototyp im vorhandenen Godot-Projekt. Entwickelt und geprueft
 mit Godot **4.7.2 stable**, GDScript, GL Compatibility und der vorhandenen
 Jolt-Physikkonfiguration. Keine externen Modelle oder Zusatzpakete erforderlich.
 
+Aktueller Meilenstein: vollstaendiges Ein-Runden-Zeitrennen. Technischer Stand,
+Testnachweise und manuelle Abnahme: [docs/STATUS.md](docs/STATUS.md).
+
 ## Start
 
 1. Dieses `project.godot` in Godot oeffnen.
 2. Den Ressourcenimport abwarten.
 3. **F5** druecken. Die Hauptszene `scenes/main.tscn` ist bereits eingestellt.
 4. Bei Bedarf ins Spielfenster klicken, damit es Tastatureingaben erhaelt.
+5. **Enter** auf "Rennen starten" druecken. Nach 3, 2, 1 und "Los!" fahren.
 
 Strecke, Rollstuhl und HUD werden beim Start durch GDScript erzeugt.
 Der Editor zeigt daher vor dem Start nur den Hauptknoten der Szene.
@@ -19,11 +23,34 @@ Der Editor zeigt daher vor dem Start nur den Hauptknoten der Szene.
 | W | `accelerate` | Beschleunigen |
 | S | `brake` | Bis zum Stillstand bremsen |
 | A / D | `steer_left` / `steer_right` | Beim Fahren lenken |
-| R | `reset` | Position, Ausrichtung, Geschwindigkeit und Kamera zuruecksetzen |
+| R | `reset` | Zum letzten gueltigen Kontrollpunkt zurueck, Zeit laeuft weiter |
+| Escape | `pause` | Pausieren / fortsetzen |
+| Enter / Leertaste | `ui_accept` | Fokussierten Menuebutton bestaetigen |
+| Tab / Pfeiltasten | Godot-UI-Navigation | Menuebutton auswaehlen |
 
 Ohne W rollt das Fahrzeug aus. S hat Vorrang vor W. Vor engen Kurven bremsen;
 die Hoechstgeschwindigkeit betraegt 18 m/s (rund 65 km/h). Es gibt keinen
 Rueckwaertsgang. Nach dem Festfahren kann R verwendet werden.
+
+## Zeitrennen
+
+Eine Runde in vorgegebener Richtung absolvieren. Sechs unsichtbare Kontrolllinien
+zaehlen nur geordnet und bei Vorwaertsueberfahrt. Der sichtbare Zaehler zeigt den
+Fortschritt; nach 6/6 muss die vorhandene Start-/Ziellinie vorwaerts passiert
+werden. Die erste Ueberfahrt direkt nach dem Start beendet das Rennen nicht.
+
+Die Zeit beginnt mit "Los!" und erscheint als `MM:SS.mmm`. Escape friert Fahrzeug,
+Countdown, Zeit und Fortschritt ein. Das Pausenmenue bleibt mit der Tastatur
+bedienbar. R setzt nur Position, Ausrichtung, Geschwindigkeit und Kamera am
+letzten gueltigen Kontrollpunkt zurueck, nicht Zeit oder Rennfortschritt. Vor dem
+ersten Kontrollpunkt geht es zur Startposition zurueck.
+
+Nach dem Ziel zeigt das Ergebnis Rundenzeit, bisherige Bestzeit und gegebenenfalls
+"Neuer Rekord!". Enter startet einen neuen Versuch mit frischem Countdown.
+Auch im Pausenmenue ist "Neuer Versuch" verfuegbar. Die Bestzeit bleibt erhalten.
+Sie wird nur nach gueltigem Zieleinlauf unter `user://best_time_v1.json`
+gespeichert, auf Windows normalerweise in
+`%APPDATA%\Godot\app_userdata\WheelChairRacer\`.
 
 ## Inhalt
 
@@ -45,41 +72,54 @@ $godot = "$env:USERPROFILE\Downloads\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-
 & $godot --headless --path . --editor --import
 & $godot --headless --path . --quit-after 180
 & $godot --headless --path . --fixed-fps 60 --script res://tests/smoke_test.gd
+& $godot --headless --path . --fixed-fps 60 --script res://tests/race_test.gd
 & $godot --path . --rendering-method gl_compatibility --quit-after 180
 & $godot --path . --rendering-method gl_compatibility --fixed-fps 60 --script res://tests/smoke_test.gd
+& $godot --path . --resolution 1920x1080 --fixed-fps 60 --script res://tests/race_test.gd
 ```
 
 Der Verhaltenstest beendet sich bei fehlgeschlagenen Pruefungen mit Exitcode 1.
 Er simuliert physische Tasteneingaben und prueft Eingabezuordnung, Bodenkontakt,
 Beschleunigen, Geschwindigkeitslimit, Bremsen, Ausrollen, beide Lenkrichtungen,
 Kollisionen an Geraden und Kurven sowie Fahrzeug- und Kamerareset.
+Der Renntest prueft zusaetzlich Rennregeln, Tastaturmenues, Countdown, Pause,
+Kontrollpunktreset, Neustarts und Bestzeitspeicherung. Speicherpruefungen verwenden
+ein separates temporaeres `user://race-tests-*`-Verzeichnis; echte Bestzeiten
+werden weder gelesen noch ueberschrieben. Eine komplette Runde wird dabei mit
+automatisierten InputMap-Eingaben gefahren, nicht durch Teleportieren abgeschlossen.
 
 ## Verifizierter Stand
 
 - Godot-Version: `4.7.2.stable.official.ed1daf0bf`.
 - Ressourcenimport und Headless-Start erfolgreich, keine verbleibenden
   GDScript- oder Laufzeitfehler in den ausgefuehrten Pruefungen.
-- 28 Verhaltens-/Konfigurationspruefungen ohne Grafik bestanden.
+- 29 Fahr-/Konfigurationspruefungen ohne Grafik bestanden, inklusive einer
+  Kollisionspruefung der gesamten Strecke auf drei Fahrlinien.
 - Dieselben Pruefungen mit echter OpenGL-3.3-Compatibility-Ausgabe auf
   Intel Iris Xe bestanden, dazu sechs Screenshot-/Bildpruefungen.
 - Startansicht und Ansicht nach einer automatisierten Lenkbewegung als echte
   Renderbilder angesehen: Figur, Strecke, Beleuchtung und HUD sichtbar.
 - Bilder: `user://prototype-start.png` und `user://prototype-turn.png`, unter
   `%APPDATA%\Godot\app_userdata\WheelChairRacer\`.
+- Renntest: 71 Pruefungen ohne Grafik, 77 mit Grafik inklusive sechs Aufnahmen.
+- Automatisierte vollstaendige Runde: `00:17.365`, alle sechs Kontrollpunkte,
+  kein Wandkontakt. Dies ist ein Funktionstest, keine Leistungsmessung.
+- Start-, Renn-, Pause- und Ergebnisansichten als echte 1080p-Renderbilder angesehen.
 
 Keine manuelle Probefahrt mit menschlichen Tastatureingaben durchgefuehrt.
 Fahrgefuehl und eine vollstaendige manuell gefahrene Runde sind noch zu pruefen.
-Die Kamera hat keine eigene Hinderniskollision. Das ist eine einfache
-Teststrecke, noch kein fertiges Rennen: keine Gegner, Anpassungsoptionen,
-Rundenwertung oder komplexe Radphysik.
+Die Kamera hat keine eigene Hinderniskollision. Das Zeitrennen umfasst genau
+eine Runde, keine Gegner, Anpassungsoptionen oder komplexe Radphysik.
+Fuer diesen Rennmeilenstein wurde keine neue Bildratenmessung durchgefuehrt.
 
 ## Gestaltungsstand: Stadtpark
 
 Ueberarbeitung vom 13.10.2026, im bestehenden Projekt. Vorher: flache gruene
 Flaeche, gelber Torbalken, rot-weisse Waende, weitgehend einheitliche
 Materialrauheit, keine Parkdekoration. Der Git-Status wurde vor der Arbeit
-geprueft: Dieser Ordner besitzt kein Git-Repository. Kein Reset, Checkout oder
-Neuanlegen eines Projekts wurde ausgefuehrt.
+geprueft: Zu diesem Zeitpunkt besass der Ordner kein Git-Repository. Inzwischen
+wurde Git eingerichtet. Kein Reset, Checkout oder Neuanlegen eines Projekts wurde
+fuer die Gestaltung ausgefuehrt.
 
 Die neue Gestaltung konzentriert sich auf Startgerade und ersten Kurvenbogen:
 neun geometrische Baeume, fuenf niedrige Buschgruppen, eine Promenade mit zwei
@@ -99,8 +139,8 @@ Asphalt und Gras verwenden unterschiedlich skalierte, nahtlose Noise-Texturen.
 Gummi ist dunkel und rau, Metall hat gerichtete Lichtreflexe, Sitzpolster
 eine matte Stoffstruktur. Himmel, Sonne und Umgebungslicht nutzen ausschliesslich
 Compatibility-faehige Standardfunktionen. Keine neuen Postprocessing-Effekte.
-Das bestehende HUD zeigt weiterhin nur Titel, Strecke, Geschwindigkeit und
-Steuerung, mit kleineren Schriftgroessen und kontrastreichen, flachen Baendern.
+Das HUD erhielt kleinere Schriftgroessen und kontrastreiche, flache Baender.
+Der spaetere Rennmeilenstein ergaenzt darin Zeit und Kontrollpunktfortschritt.
 
 Es wurden **keine Fremdassets heruntergeladen oder eingebunden**. Geometrie und
 Oberflaechen entstehen aus Godot-Primitiven und FastNoiseLite im Projektcode.
@@ -128,7 +168,8 @@ hatte in den gemessenen Ansichten aber hoehere Framezeiten. Die Rohdaten liegen
 in [before.json](docs/visual-review/before.json) und
 [after.json](docs/visual-review/after.json).
 
-Finaler Durchlauf auf Intel Iris Xe, OpenGL 3.3 Compatibility, Godot 4.7.2:
+Historischer Durchlauf des Gestaltungsmeilensteins, vor der Rennintegration,
+auf Intel Iris Xe, OpenGL 3.3 Compatibility, Godot 4.7.2:
 
 | Ansicht | MSAA | Mittlere FPS | Mittlere Framezeit | 95%-Framezeit |
 | --- | --- | --- | --- | --- |
@@ -151,15 +192,21 @@ Zusaetzlich zu den obigen Import-, Start- und Funktionstests:
 
 ```powershell
 & $godot --path . --resolution 1920x1080 --script res://tests/visual_review.gd
+& $godot --path . --resolution 1920x1080 --script res://tests/visual_review.gd -- --capture-only
 ```
 
-Dieser reine Entwickler-Pruefmodus aktualisiert Nachherbilder und Messbericht,
-testet 2x und 4x nur fuer seinen eigenen Prozess und beendet sich automatisch.
+Dieser reine Entwickler-Pruefmodus erzeugt jetzt separate `race-*`-Bilder und
+`race.json`, testet 2x und 4x nur fuer seinen eigenen Prozess und beendet sich
+automatisch. `--capture-only` nimmt Bilder ohne Leistungsmessung auf; dieser
+Modus wurde fuer den Rennmeilenstein ausgefuehrt. Das Startmenue wird fuer die
+festen Kameraansichten ausgeblendet, die Rennlogik bleibt dabei angehalten.
 Die vorhandene Vorheraufnahme nicht mit `--before` ueberschreiben.
 Die Hash-Pruefungen bestaetigen unveraenderte Kollisionsformen/-transformationen,
-Eingabebelegung und den Steuerungsabschnitt des Fahrzeugskripts. Import,
-Headless-Start, grafischer Start und alle 28 Funktionstests wurden nach der
-Ueberarbeitung erneut erfolgreich ausgefuehrt, die Funktionstests auch mit Grafik.
+und die bisherige Fahrbelegung. Der Controller-Hash wird weiterhin aufgezeichnet,
+aber wegen der absichtlich ergaenzten Startsperre und Kontrollpunktruecksetzung
+nicht mehr gegen den Stand vor dem Zeitrennen verglichen. Diese Funktionen
+sichern die Fahr- und Renntests ab. Historische `before-*`/`after-*`-Aufnahmen
+und Messberichte bleiben unveraendert.
 
 ### Manuelle Abnahme
 
@@ -183,6 +230,9 @@ nicht vollstaendig als Park ausgestaltet. Hier endet dieser Gestaltungsmeilenste
 
 - `scripts/main.gd`: Strecke, Beleuchtung, Kamera und HUD.
 - `scripts/wheelchair.gd`: Fahrzeug, geometrisches Modell und Arcadebewegung.
+- `scripts/race.gd`: Einzige Rennzustandsverwaltung, Linienpruefungen und Bestzeiten.
 - `tests/smoke_test.gd`: Automatisierte Pruefungen ohne und mit Grafik.
+- `tests/race_test.gd`: Rennregeln, isolierte Speichertests und automatisierte Runde.
 - `tests/visual_review.gd`: Reproduzierbarer Bildvergleich und statische MSAA-Messung.
+- `docs/STATUS.md`: Aktueller Meilenstein, Nachweise und manuelle Abnahme.
 - `AGENTS.md`: Kurze Regeln fuer weitere Projektarbeit.
