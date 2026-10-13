@@ -1,0 +1,37 @@
+{
+	"adapter": "Intel(R) Iris(R) Xe Graphics",
+	"engine": "4.7.2-stable (official)",
+	"fingerprint": {
+		"collider_count": 180,
+		"collision_hash": "205b025448c5a2a1adb0ecaa327e32c65855bfd42b00a7ff449a1c1c562e4d51",
+		"controller_hash": "71d1df1412af30f4f2001f3d776345dd0a42062410153d0ceeaec7fde09d614b",
+		"input_hash": "7c68929e824c5de550e47f3928d8d3080468d5b07df5aa074874a3ae96476d21"
+	},
+	"measurements": [
+		{
+			"camera_transform": "Transform3D(1, 0, 0, 0, 0.93547213, 0.35340056, 0, -0.35340056, 0.93547213, 12, 4.58, 23.5)",
+			"msaa": "2x",
+			"view": "start"
+		},
+		{
+			"camera_transform": "Transform3D(0.7071067, -0.24989197, 0.66147876, 0, 0.9354721, 0.3534006, -0.7071068, -0.24989192, 0.66147864, 13.788582, 4.58, -21.18198)",
+			"msaa": "2x",
+			"view": "curve"
+		},
+		{
+			"camera_transform": "Transform3D(1, 0, 0, 0, 0.93547213, 0.35340056, 0, -0.35340056, 0.93547213, 12, 4.58, 23.5)",
+			"msaa": "4x",
+			"view": "start"
+		},
+		{
+			"camera_transform": "Transform3D(0.7071067, -0.24989197, 0.66147876, 0, 0.9354721, 0.3534006, -0.7071068, -0.24989192, 0.66147864, 13.788582, 4.58, -21.18198)",
+			"msaa": "4x",
+			"view": "curve"
+		}
+	],
+	"method": "Screenshots only; no performance measurement",
+	"renderer": "gl_compatibility",
+	"resolution": "1920x1080",
+	"stage": "race",
+	"vsync": "disabled"
+}

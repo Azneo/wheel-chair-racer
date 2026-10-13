@@ -1,0 +1,53 @@
+{
+	"adapter": "Intel(R) Iris(R) Xe Graphics",
+	"engine": "4.7.2-stable (official)",
+	"fingerprint": {
+		"collider_count": 180,
+		"collision_hash": "205b025448c5a2a1adb0ecaa327e32c65855bfd42b00a7ff449a1c1c562e4d51",
+		"controller_hash": "0fa569970c70d0bd306b4241c36523828617c94a1e6f1ff37c35e1aeae3d1ca0",
+		"input_hash": "7c68929e824c5de550e47f3928d8d3080468d5b07df5aa074874a3ae96476d21"
+	},
+	"measurements": [
+		{
+			"camera_transform": "Transform3D(1, 0, 0, 0, 0.93547213, 0.35340056, 0, -0.35340056, 0.93547213, 12, 4.58, 23.5)",
+			"frames": 240,
+			"mean_fps": 133.367712565906,
+			"mean_frame_ms": 7.49806666666667,
+			"msaa": "2x",
+			"p95_frame_ms": 14.448,
+			"view": "start"
+		},
+		{
+			"camera_transform": "Transform3D(0.7071067, -0.24989197, 0.66147876, 0, 0.9354721, 0.3534006, -0.7071068, -0.24989192, 0.66147864, 13.788582, 4.58, -21.18198)",
+			"frames": 240,
+			"mean_fps": 154.17278272237,
+			"mean_frame_ms": 6.48622916666667,
+			"msaa": "2x",
+			"p95_frame_ms": 18.379,
+			"view": "curve"
+		},
+		{
+			"camera_transform": "Transform3D(1, 0, 0, 0, 0.93547213, 0.35340056, 0, -0.35340056, 0.93547213, 12, 4.58, 23.5)",
+			"frames": 240,
+			"mean_fps": 121.87096302435,
+			"mean_frame_ms": 8.2054,
+			"msaa": "4x",
+			"p95_frame_ms": 20.985,
+			"view": "start"
+		},
+		{
+			"camera_transform": "Transform3D(0.7071067, -0.24989197, 0.66147876, 0, 0.9354721, 0.3534006, -0.7071068, -0.24989192, 0.66147864, 13.788582, 4.58, -21.18198)",
+			"frames": 240,
+			"mean_fps": 125.174461906282,
+			"mean_frame_ms": 7.98885,
+			"msaa": "4x",
+			"p95_frame_ms": 22.116,
+			"view": "curve"
+		}
+	],
+	"method": "240 wall-clock inter-frame samples after 60 warmup frames per static view; not GPU timings or a gameplay benchmark",
+	"renderer": "gl_compatibility",
+	"resolution": "1920x1080",
+	"stage": "after",
+	"vsync": "disabled"
+}
