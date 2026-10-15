@@ -44,7 +44,7 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause") and not event.is_echo():
+	if event.is_action_pressed("pause") and not event.is_echo() and state != State.READY:
 		toggle_pause()
 		get_viewport().set_input_as_handled()
 
@@ -69,6 +69,20 @@ func start_attempt() -> void:
 func toggle_pause() -> void:
 	get_tree().paused = not get_tree().paused
 	state_changed.emit()
+
+
+func return_to_ready() -> void:
+	get_tree().paused = false
+	state = State.READY
+	elapsed_seconds = 0.0
+	countdown_remaining = 3.0
+	checkpoint_count = 0
+	result_ms = 0
+	player.driving_enabled = false
+	player.speed = 0.0
+	player.velocity = Vector3.ZERO
+	state_changed.emit()
+	updated.emit()
 
 
 func _physics_process(delta: float) -> void:

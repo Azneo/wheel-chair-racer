@@ -50,7 +50,7 @@ func _cross(gate: Transform3D, reverse: bool = false, actor: Node3D = null) -> v
 
 
 func _begin() -> void:
-	game.race.start_attempt()
+	game._start_game()
 	await _frames(182)
 	_check(game.race.state == RaceController.State.RACING, "Countdown releases a new attempt")
 
@@ -125,12 +125,13 @@ func _run() -> void:
 	_check(game.race.best_ms == 0, "Missing best-time file is harmless")
 	_check(RaceController.format_time(65432) == "01:05.432", "Time format is MM:SS.mmm")
 	await _capture("ready")
-	var spawn: Vector3 = game.player.global_position
+	var showcase_position: Vector3 = game.player.global_position
 	_key(KEY_W, true)
 	await _frames(30)
-	_check(game.player.global_position == spawn and game.player.speed == 0.0, "Holding W cannot move the player in READY")
+	_check(game.player.global_position == showcase_position and game.player.speed == 0.0, "Showcase player remains still in READY")
 	await _tap(KEY_ENTER)
 	_check(game.race.state == RaceController.State.COUNTDOWN and game.race.countdown_text() == "3", "Enter starts the countdown at 3")
+	var spawn: Vector3 = game.player.spawn_transform.origin
 	await _capture("countdown")
 	await _frames(60)
 	_check(game.race.countdown_text() == "2", "Countdown displays 2")
@@ -138,7 +139,7 @@ func _run() -> void:
 	var countdown: float = game.race.countdown_remaining
 	await _frames(45)
 	_check(paused and game.race.countdown_remaining == countdown, "Escape freezes the countdown")
-	_check(game.primary_button.has_focus() and game.primary_button.text == "Fortsetzen", "Pause menu is keyboard focused")
+	_check(game.primary_button.has_focus() and game.primary_button.text == "Resume", "Pause menu is keyboard focused")
 	await _tap(KEY_ENTER)
 	_check(not paused, "Keyboard pause-menu button resumes")
 	await _frames(60)
@@ -206,7 +207,7 @@ func _run() -> void:
 	_cross(game.race.finish)
 	_check(game.race.state == RaceController.State.FINISHED and game.race.result_ms == 65432, "Valid forward finish records the result")
 	_check(game.race.new_record and game.race.best_ms == 65432 and not game.race.save_failed, "First valid finish saves a new record")
-	_check(game.primary_button.has_focus() and game.record_label.text == "Neuer Rekord!", "Result and record message are keyboard accessible")
+	_check(game.primary_button.has_focus() and game.record_label.text == "New record!", "Result and record message are keyboard accessible")
 	var result: float = game.race.elapsed_seconds
 	await _frames(30)
 	_cross(game.race.finish)
@@ -218,7 +219,7 @@ func _run() -> void:
 	await _tap(KEY_ENTER)
 	_check(game.race.state == RaceController.State.COUNTDOWN and game.race.result_ms == 0, "Result restarts using Enter")
 	for restart_index in range(3):
-		game.race.start_attempt()
+		game._start_game()
 		_check(game.race.elapsed_seconds == 0.0 and game.race.checkpoint_count == 0 and game.player.global_transform.is_equal_approx(game.player.spawn_transform), "Restart %d clears time, progress and position" % (restart_index + 1))
 		_check(game.player.speed == 0.0 and game.player.velocity == Vector3.ZERO and not game.race.new_record and game.record_label.text.is_empty(), "Restart %d clears velocity and result UI" % (restart_index + 1))
 	_check(game.race.best_ms == 65432, "Repeated restarts preserve the best time")

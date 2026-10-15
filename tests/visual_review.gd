@@ -108,10 +108,13 @@ func _run() -> void:
 	game.best_time_path = ""
 	root.add_child(game)
 	current_scene = game
+	game._start_game()
 	game.set_process(false)
 	game.player.set_physics_process(false)
 	game.race.set_physics_process(false)
 	game.race_menu.hide()
+	game.frontend_root.hide()
+	game.follow_camera.make_current()
 	game.speed_label.text = "00 km/h"
 	var fingerprint: Dictionary = _fingerprint()
 	if stage != "before":

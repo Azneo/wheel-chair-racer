@@ -73,7 +73,7 @@ func _run() -> void:
 	game.best_time_path = ""
 	root.add_child(game)
 	current_scene = game
-	game.race.start_attempt()
+	game._start_game()
 	await _frames(182)
 	game.race.set_physics_process(false)
 	await _frames(12)
@@ -102,10 +102,19 @@ func _run() -> void:
 	_check(player.global_position.z < start.z - 15.0, "Acceleration moves the vehicle forward")
 	_key(KEY_W, false)
 	_key(KEY_S, true)
-	await _frames(60)
-	_check(player.speed < 0.01, "S brakes to a full stop")
+	var stopped_before_reverse: bool = false
+	for frame_index in range(60):
+		await _frames(1)
+		if player.speed == 0.0:
+			stopped_before_reverse = true
+			break
+	_check(stopped_before_reverse, "S brakes to a full stop before reversing")
 	await _frames(15)
-	_check(player.speed >= 0.0, "Braking does not reverse")
+	_check(player.speed < -0.5, "Holding S at rest moves the wheelchair backward")
+	_key(KEY_S, false)
+	_key(KEY_W, true)
+	await _frames(30)
+	_check(player.speed > 0.0, "W transitions from reverse into forward movement")
 	_release_keys()
 
 	player.reset_to_start()
@@ -135,7 +144,10 @@ func _run() -> void:
 	_key(KEY_W, true)
 	_key(KEY_S, true)
 	await _frames(30)
-	_check(player.speed == 0.0, "Braking takes priority over acceleration")
+	_check(
+		is_equal_approx(player.speed, -player.MAX_SPEED * 0.25),
+		"S takes priority over W and caps reverse speed"
+	)
 	_release_keys()
 
 	player.reset_to_start()

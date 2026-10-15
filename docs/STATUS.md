@@ -1,9 +1,49 @@
-# Projektstatus: Ein-Runden-Zeitrennen
+# Projektstatus: Main Menu, Upgrades und Ein-Runden-Zeitrennen
 
-Stand: 13.10.2026. Implementiert im bestehenden WheelChairRacer-Projekt.
+Aktueller Meilenstein (15.10.2026): Main Menu, persistente Engine-Upgrades,
+ein fahrzeuggebundener Garagen-Showcase und eine verbesserte Fahrerpose mit
+radgekoppelter Schubanimation;
+die folgenden frueheren Renn- und Gestaltungstests bleiben als Nachweise erhalten.
+
+Stand der frueheren Rennintegration: 13.10.2026. Implementiert im bestehenden WheelChairRacer-Projekt.
 Godot `4.7.2.stable.official.ed1daf0bf`, GL Compatibility, OpenGL 3.3 auf Intel
 Iris Xe. Hauptszene weiterhin `scenes/main.tscn`. Kein zweites Projekt,
 keine neuen Abhaengigkeiten, keine neuen Spielmodi.
+
+## Upgrade-Garage (15.10.2026)
+
+- **UPGRADE** oeffnet eine dunkle, industriell gestaltete Workshop-Ansicht mit
+  eigener Showroom-Kamera, Filmic-Umgebung und warmem Schluessel-/kuehlem Rim-Licht.
+- Der bestehende Rollstuhl samt Fahrer bleibt das grosse 3/4-Rueckansicht-Zentrum;
+  die Umgebungsgeometrie wird nur in den Upgrade-Seiten eingeblendet.
+- `PlayerUpgrades` enthaelt pro Motor die Stats und eine `visual_id`.
+  `engine_visuals.gd` baut daraus drei unterschiedliche prozedurale Designs:
+  kompakter COMET-Antrieb, mechanischer RALLY-Doppelantrieb und futuristischer
+  LAUNCH-Doppelschubkoerper.
+- Das jeweils einzige Motormodell ist Kind von `Wheelchair/EngineMount` unter
+  dem Sitz. Wechseln laesst es in etwa 0,32 Sekunden herabgleiten und den
+  ausgewaehlten Antrieb einrasten. Die persistierte Auswahl und die Gameplay-
+  Stats bleiben dieselbe gemeinsame Upgrade-Datenquelle.
+- Engine-Wahl, Modellidentitaet, Parent-Hierarchie, Einzelmontage, Navigation,
+  Save/Reload und Fahrzeuggestats werden im Upgrade-Regresstest geprueft.
+
+## Fahrerpose Und Schubanimation (15.10.2026)
+
+- Die Figur bleibt prozedural, ist aber unter `Wheelchair/Rider` und
+  `UpperBody` gruppiert. Dieses austauschbare Modell-Root benoetigt weder ein
+  Skelett noch externe Assets oder Animation-Plugins.
+- Becken und Oberschenkel sitzen auf dem Kissen; die Knie beugen nach vorn und
+  die Schuhe stehen auf der Fussstuetze. Die Werkstattpose wurde frontal und
+  seitlich gerendert, um Sitzkontakt und Beinverlauf zu kontrollieren.
+- Ein leichtes Zweisegment-Armsetup positioniert die Haende an den Handringen.
+  Waehrend der Fahrt folgt der Schubbogen der tatsaechlichen Radrotation; beim
+  Ausrollen kehren Arme und Oberkoerper in etwa 0,22 Sekunden zur Ruhepose
+  zurueck. S bremst bis zum Stillstand und faehrt bei weiterem Halten
+  rueckwaerts; W schaltet zur Vorwaertsbewegung. Die Engine-Montage bleibt
+  unveraendert.
+- Der Upgrade-Regresstest prueft Sitz-/Beinposition, Handkontakt, vorwaerts und
+  rueckwaerts synchronisierte Rad-/Armbewegung, Lenkung, Stillstand,
+  Engine-Anbindung und Werkstattansichten.
 
 ## Bestand Und Uebernommene Funktionen
 
@@ -91,11 +131,13 @@ Alle folgenden finalen Durchlaeufe endeten erfolgreich:
 | `--headless --path . --editor --import` | Keine Import-/Skriptfehler |
 | `--headless --path . --quit-after 180` | Hauptszene startet |
 | `--path . --quit-after 180` | Grafischer Start mit Compatibility |
-| `tests/smoke_test.gd`, headless, fixed-fps 60 | 29 Pruefungen bestanden |
-| Derselbe Smoke-Test mit Grafik bei 1920x1080 | 35 inklusive Bildpruefungen bestanden |
+| `tests/smoke_test.gd`, headless, fixed-fps 60 | 30 Pruefungen bestanden |
+| Derselbe Smoke-Test mit Grafik bei 1920x1080 | 36 inklusive Bildpruefungen bestanden |
 | `tests/race_test.gd`, headless, fixed-fps 60 | 71 Pruefungen bestanden |
 | Derselbe Renntest mit Grafik bei 1920x1080 | 77 inklusive sechs Aufnahmen bestanden |
 | `tests/visual_review.gd -- --capture-only` | Unveraenderte Kollisionen/Fahrbelegung, vier echte 1080p-Bilder |
+| `tests/upgrade_test.gd`, headless, fixed-fps 60 | 90 Pruefungen bestanden |
+| Derselbe Upgrade-Test mit GL Compatibility bei 1280x720 | 114 Pruefungen bestanden; Sitzpose, Front-/Seitenansicht, Vorwaerts-/Rueckwaertsschub, Garage und alle drei Motoren gerendert/geprueft |
 
 Der Renntest prueft geordnete, uebersprungene, doppelte und falschrichtig
 ueberfahrene Kontrollpunkte, Fremdkoerper, verfruehten/falschrichtigen Zieleinlauf,
@@ -141,3 +183,51 @@ sind unsichtbar; der HUD-Zaehler zeigt den Fortschritt. Die Strecke und der
 Rennablauf sind lokal, ohne Manipulationsschutz oder Mehrspielerwertung.
 Andere Aufloesungen und eine laengere menschliche Probefahrt bleiben manuell
 abzunehmen. Keine Gegner, zusaetzlichen Strecken oder Erweiterungen der Fahrphysik.
+
+## Main Menu Und Engine-Upgrades
+
+Im bestehenden `scenes/main.tscn`-Ablauf wurde die READY-Ansicht durch ein
+Hauptmenue mit **PLAY**, **UPGRADE** und **EXIT** erweitert. Dasselbe
+Wheelchair-CharacterBody3D wird waehrend der Menues auf einer statischen
+Showcase-Buehne praesentiert; beim Start wird es an den Streckenstart versetzt
+und die vorhandene Gameplaykamera aktiviert. Pause, Rennende und Bestzeit bleiben
+Bestandteil des bestehenden Zeitrennens.
+
+`scripts/player_upgrades.gd` ist als `PlayerUpgrades`-Autoload die gemeinsame
+Quelle fuer Basestats und Upgrade-Katalog. Standardwerte sind 65 km/h und
+35 km/h/s. COMET gibt +10 km/h, RALLY +5 km/h und +10 km/h/s, LAUNCH +20 km/h/s.
+Die Auswahl wird in `user://player_upgrades_v1.json` gespeichert. Die
+Fahrzeugsteuerung liest dieselben Werte und rechnet sie fuer ihre bestehende
+Meter-pro-Sekunde-Bewegung um. WHEEL und AERODYNAMICS sind reine Coming-Soon-
+Platzhalter; es gibt keine Waehrung oder Bezahlfunktion.
+
+Das Upgrade-Menue, die drei Wahlkarten und die Statistik werden in derselben
+Menue-Navigation gehalten. Die Vorschau nutzt denselben Spieler statt eines
+zweiten Modells. PLAY aktiviert die bisherige Rennstrecke und verwendet den
+ausgewaehlten Antrieb; Pausen- und Ergebnismenues koennen zum Hauptmenue
+zurueckkehren. Die Main-Menu- und Engine-Ansichten wurden bei 1280x720 mit
+OpenGL 3.3 GL Compatibility gerendert und visuell geprueft.
+
+### Verifikation Des Upgrade-Meilensteins
+
+| Pruefung | Ergebnis |
+| --- | --- |
+| Godot 4.7.2 Import und Headless-Start | Erfolgreich |
+| `tests/upgrade_test.gd`, Headless | 54 Pruefungen bestanden |
+| `tests/upgrade_test.gd`, GL Compatibility | 58 Pruefungen bestanden, Screenshots geprueft |
+| `tests/smoke_test.gd`, Headless | 29 Pruefungen bestanden |
+| `tests/race_test.gd`, Headless | 71 Pruefungen bestanden |
+
+Der isolierte Upgrade-Test prueft PLAY, EXIT-Verknuepfung, Kategorien und
+Coming-Soon-Zustaende, genau drei Enginekarten, Aktualisierung der Stats, die
+persistierte Auswahl nach Reload, Werte an den Fahrzeug-Properties und die
+tatsaechliche Beschleunigung nach dem Countdown. Er verwendet eine temporaere
+Speicherdatei und stellt den zuvor konfigurierten Upgrade-Speicher anschliessend
+wieder her. Die Tests unter `--script` erstellen den Autoload bei Bedarf fuer den
+isolierten Runner; normale Projektstarts verwenden weiterhin den konfigurierten
+Autoload.
+
+Keine manuelle Maus-/Tastatur-Probefahrt nach dieser Aenderung durchgefuehrt.
+Bitte Hauptmenue, Maus-Hover/Fokus und persoenliche Engineauswahl im Editorfenster
+bei der gewuenschten Aufloesung manuell abnehmen. Die frueheren manuellen
+Renn-Abnahmepunkte gelten weiterhin.

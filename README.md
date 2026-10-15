@@ -4,8 +4,9 @@ Spielbarer 3D-Prototyp im vorhandenen Godot-Projekt. Entwickelt und geprueft
 mit Godot **4.7.2 stable**, GDScript, GL Compatibility und der vorhandenen
 Jolt-Physikkonfiguration. Keine externen Modelle oder Zusatzpakete erforderlich.
 
-Aktueller Meilenstein: vollstaendiges Ein-Runden-Zeitrennen. Technischer Stand,
-Testnachweise und manuelle Abnahme: [docs/STATUS.md](docs/STATUS.md).
+Aktueller Meilenstein: Main Menu mit persistenten Engine-Upgrades und
+Ein-Runden-Zeitrennen. Technischer Stand, Testnachweise und manuelle Abnahme:
+[docs/STATUS.md](docs/STATUS.md).
 
 ## Start
 
@@ -13,7 +14,7 @@ Testnachweise und manuelle Abnahme: [docs/STATUS.md](docs/STATUS.md).
 2. Den Ressourcenimport abwarten.
 3. **F5** druecken. Die Hauptszene `scenes/main.tscn` ist bereits eingestellt.
 4. Bei Bedarf ins Spielfenster klicken, damit es Tastatureingaben erhaelt.
-5. **Enter** auf "Rennen starten" druecken. Nach 3, 2, 1 und "Los!" fahren.
+5. **PLAY** waehlen. Nach 3, 2, 1 und "Los!" fahren.
 
 Strecke, Rollstuhl und HUD werden beim Start durch GDScript erzeugt.
 Der Editor zeigt daher vor dem Start nur den Hauptknoten der Szene.
@@ -21,16 +22,53 @@ Der Editor zeigt daher vor dem Start nur den Hauptknoten der Szene.
 | Taste | InputMap-Aktion | Funktion |
 | --- | --- | --- |
 | W | `accelerate` | Beschleunigen |
-| S | `brake` | Bis zum Stillstand bremsen |
+| S | `brake` | Bremsen; bei Stillstand rueckwaerts fahren |
 | A / D | `steer_left` / `steer_right` | Beim Fahren lenken |
 | R | `reset` | Zum letzten gueltigen Kontrollpunkt zurueck, Zeit laeuft weiter |
 | Escape | `pause` | Pausieren / fortsetzen |
 | Enter / Leertaste | `ui_accept` | Fokussierten Menuebutton bestaetigen |
 | Tab / Pfeiltasten | Godot-UI-Navigation | Menuebutton auswaehlen |
 
-Ohne W rollt das Fahrzeug aus. S hat Vorrang vor W. Vor engen Kurven bremsen;
-die Hoechstgeschwindigkeit betraegt 18 m/s (rund 65 km/h). Es gibt keinen
-Rueckwaertsgang. Nach dem Festfahren kann R verwendet werden.
+## Hauptmenue und Upgrades
+
+Das Hauptmenue zeigt den Fahrer im Rollstuhl in einer ruhigen 3D-Ruhepose sowie
+Hoechstgeschwindigkeit, Beschleunigung und das eingebaute Engine-Upgrade.
+**PLAY** startet das bestehende Zeitrennen, **UPGRADE** oeffnet die Kategorien
+und **EXIT** beendet das Spiel.
+
+Unter **ENGINE** kann genau eines von drei Upgrades ausgewaehlt werden:
+
+| Engine | Max Speed | Acceleration |
+| --- | ---: | ---: |
+| COMET | +10 km/h | +0 km/h/s |
+| RALLY | +5 km/h | +10 km/h/s |
+| LAUNCH | +0 km/h | +20 km/h/s |
+
+Ohne Upgrade gelten 65 km/h und 35 km/h/s. Die Werte werden aus der gemeinsamen
+Upgrade-Datenstruktur berechnet und vom Fahrzeug direkt fuer Hoechstgeschwindigkeit
+und Beschleunigung verwendet. **WHEEL** und **AERODYNAMICS** sind klickbare
+"Coming Soon"-Platzhalter. Die Engine-Auswahl bleibt unter
+`user://player_upgrades_v1.json` erhalten; sie verwendet einen separaten Speicher
+von der persoenlichen Bestzeit. Es gibt keine Spielwaehrung oder Bezahlfunktion.
+
+Der Upgrade-Bildschirm wechselt in eine dunkle, selbst erzeugte Garage mit
+eigener Kamera und dezentem Showroom-Licht. Der Rollstuhl bleibt als grosses
+3D-Zentrum sichtbar; seine drei Engine-Modelle sind unterschiedliche
+prozedurale Baugruppen, die unter dem Sitz direkt am Fahrzeug montiert sind.
+Beim Wechsel gleitet das alte Modell heraus und das neue an seinen Platz.
+Die gewaehlte Engine bleibt auch beim Start des Rennens am selben Fahrzeug.
+
+Die geometrische Fahrerfigur sitzt auf einer eigenen, spaeter austauschbaren
+Rider-Hierarchie. Becken und Oberschenkel liegen auf dem Sitz, Unterschenkel
+und Schuhe folgen Knie und Fussstuetze. Beim Fahren verfolgen beide Haende die
+Handringe waehrend des Schubbogens; Arme und Haende gehen weich in die Ruhepose
+zurueck. Die Pose nutzt die vorhandenen Radrotationen und ein leichtes
+Zweisegment-Armsetup statt eines zusaetzlichen Rig- oder IK-Plugins.
+
+Ohne W rollt das Fahrzeug aus. S hat Vorrang vor W, bremst bis zum Stillstand
+und faehrt bei weiterem Halten langsam rueckwaerts. Vor engen Kurven bremsen;
+die Basis-Hoechstgeschwindigkeit betraegt 65 km/h. Mit COMET steigt sie auf
+75 km/h. Nach dem Festfahren kann R verwendet werden.
 
 ## Zeitrennen
 
@@ -54,25 +92,34 @@ gespeichert, auf Windows normalerweise in
 
 ## Inhalt
 
+- Hauptmenue mit statischer 3D-Vorschau des wiederverwendeten Rollstuhlfahrers,
+  Spielerstats sowie PLAY-, UPGRADE- und EXIT-Navigation.
+- Drei persistente Engine-Setups, die Hoechstgeschwindigkeit und Beschleunigung
+  direkt in der Fahrzeugsteuerung veraendern.
+- Upgrade-Garage mit eigener Beleuchtung/Kamera, grossem Rollstuhl-Showcase und
+  drei am Rollstuhl montierten, unterscheidbaren Motorbaugruppen.
 - Geschlossene Stadionstrecke mit zwei Geraden, zwei Halbkreisen, solidem
   Boden, Innen-/Aussenbegrenzungen und Startmarkierung.
 - Geometrischer Rollstuhl mit Rahmen, Sitz, Greifreifen, Speichen,
-  Vorderraedern und sitzender Figur mit Helm.
+  Vorderraedern und einer rund modellierten sitzenden Fahrerfigur mit Helm und
+  Gesichtszuegen.
 - CharacterBody3D-Arcadebewegung mit Kollisionen und rein visueller Raddrehung.
 - Automatische Third-Person-Kamera, Sonnenlicht, Umgebungslicht,
   Geschwindigkeitsanzeige und sichtbare Steuerungsleiste.
 
 ## Tests Wiederholen
 
-PowerShell im Projektordner. Auf diesem Rechner wurde Godot hier gefunden:
+PowerShell im Projektordner. Godot 4.7.2 wurde hier installiert:
 
 ```powershell
-$godot = "$env:USERPROFILE\Downloads\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe"
+$godot = "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64_console.exe"
 & $godot --version
 & $godot --headless --path . --editor --import
 & $godot --headless --path . --quit-after 180
+& $godot --headless --path . --fixed-fps 60 --script res://tests/upgrade_test.gd
 & $godot --headless --path . --fixed-fps 60 --script res://tests/smoke_test.gd
 & $godot --headless --path . --fixed-fps 60 --script res://tests/race_test.gd
+& $godot --path . --resolution 1280x720 --fixed-fps 60 --script res://tests/upgrade_test.gd
 & $godot --path . --rendering-method gl_compatibility --quit-after 180
 & $godot --path . --rendering-method gl_compatibility --fixed-fps 60 --script res://tests/smoke_test.gd
 & $godot --path . --resolution 1920x1080 --fixed-fps 60 --script res://tests/race_test.gd
@@ -82,6 +129,10 @@ Der Verhaltenstest beendet sich bei fehlgeschlagenen Pruefungen mit Exitcode 1.
 Er simuliert physische Tasteneingaben und prueft Eingabezuordnung, Bodenkontakt,
 Beschleunigen, Geschwindigkeitslimit, Bremsen, Ausrollen, beide Lenkrichtungen,
 Kollisionen an Geraden und Kurven sowie Fahrzeug- und Kamerareset.
+Der Upgrade-Test prueft Menue- und Kategorienavigation, alle drei Motoren,
+Statistikaktualisierung, Speicherung, Gameplaywerte, Sitzpose aus mehreren
+Ansichten, synchronisierte Armbewegung, Vorwaerts-/Rueckwaertsbewegung, Lenken
+und die Rueckkehr zur Ruhepose.
 Der Renntest prueft zusaetzlich Rennregeln, Tastaturmenues, Countdown, Pause,
 Kontrollpunktreset, Neustarts und Bestzeitspeicherung. Speicherpruefungen verwenden
 ein separates temporaeres `user://race-tests-*`-Verzeichnis; echte Bestzeiten
@@ -93,15 +144,20 @@ automatisierten InputMap-Eingaben gefahren, nicht durch Teleportieren abgeschlos
 - Godot-Version: `4.7.2.stable.official.ed1daf0bf`.
 - Ressourcenimport und Headless-Start erfolgreich, keine verbleibenden
   GDScript- oder Laufzeitfehler in den ausgefuehrten Pruefungen.
-- 29 Fahr-/Konfigurationspruefungen ohne Grafik bestanden, inklusive einer
+- 30 Fahr-/Konfigurationspruefungen ohne Grafik bestanden, inklusive einer
   Kollisionspruefung der gesamten Strecke auf drei Fahrlinien.
 - Dieselben Pruefungen mit echter OpenGL-3.3-Compatibility-Ausgabe auf
-  Intel Iris Xe bestanden, dazu sechs Screenshot-/Bildpruefungen.
+  NVIDIA GeForce RTX 3070 Laptop GPU bestanden, dazu sechs Screenshot-/Bildpruefungen.
 - Startansicht und Ansicht nach einer automatisierten Lenkbewegung als echte
   Renderbilder angesehen: Figur, Strecke, Beleuchtung und HUD sichtbar.
 - Bilder: `user://prototype-start.png` und `user://prototype-turn.png`, unter
   `%APPDATA%\Godot\app_userdata\WheelChairRacer\`.
 - Renntest: 71 Pruefungen ohne Grafik, 77 mit Grafik inklusive sechs Aufnahmen.
+- Upgrade-/Showcase-Test: 90 Headless-Pruefungen und 114 mit GL Compatibility;
+  Sitzpose, Front-/Seitenansicht, Schubphase sowie Garage und alle Motoren als
+  echte Renderbilder geprueft.
+- Engineselektion: alle drei Stats, UI-Anzeige, Dateispeicherung und Bewegung
+  mit der ausgewaehlten Beschleunigung automatisch verifiziert.
 - Automatisierte vollstaendige Runde: `00:17.365`, alle sechs Kontrollpunkte,
   kein Wandkontakt. Dies ist ein Funktionstest, keine Leistungsmessung.
 - Start-, Renn-, Pause- und Ergebnisansichten als echte 1080p-Renderbilder angesehen.
@@ -229,10 +285,14 @@ nicht vollstaendig als Park ausgestaltet. Hier endet dieser Gestaltungsmeilenste
 ## Dateien
 
 - `scripts/main.gd`: Strecke, Beleuchtung, Kamera und HUD.
-- `scripts/wheelchair.gd`: Fahrzeug, geometrisches Modell und Arcadebewegung.
+- `scripts/wheelchair.gd`: Fahrzeug, austauschbare Fahrerhierarchie,
+  geometrisches Modell, Arcadebewegung und radgekoppelte Schubpose.
+- `scripts/engine_visuals.gd`: Datengetriebene, prozedurale Motormodelle fuer die Garage.
 - `scripts/race.gd`: Einzige Rennzustandsverwaltung, Linienpruefungen und Bestzeiten.
+- `scripts/player_upgrades.gd`: Basestats, Engine-Katalog und gespeicherte Auswahl.
 - `tests/smoke_test.gd`: Automatisierte Pruefungen ohne und mit Grafik.
 - `tests/race_test.gd`: Rennregeln, isolierte Speichertests und automatisierte Runde.
+- `tests/upgrade_test.gd`: Menues, Upgrades, Sitzpose und Schubanimation.
 - `tests/visual_review.gd`: Reproduzierbarer Bildvergleich und statische MSAA-Messung.
 - `docs/STATUS.md`: Aktueller Meilenstein, Nachweise und manuelle Abnahme.
 - `AGENTS.md`: Kurze Regeln fuer weitere Projektarbeit.
