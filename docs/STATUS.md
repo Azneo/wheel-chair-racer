@@ -1,6 +1,129 @@
 # Projektstatus: Main Menu, Upgrades und Ein-Runden-Zeitrennen
 
-Aktueller Meilenstein (15.10.2026): Main Menu, persistente Engine-Upgrades,
+## Modell- Und Workshopueberarbeitung (16.10.2026)
+
+Umgesetzt im vorhandenen Projekt, ohne Aenderung an Strecke, InputMap,
+CharacterBody3D-Kollisionsform, Fahrformeln, Upgrade-Daten oder Rennregeln.
+Die folgenden Abschnitte vom 15./13.10. sind historische Nachweise und
+beschreiben teilweise die inzwischen ersetzte Primitive-Darstellung.
+
+### Sicherung Und Umfang
+
+Vor Beginn war der Git-Status sauber. Ausgangscommit:
+`608973d74180ff02d596691eeb83579358861057`.
+Verifizierte externe Sicherung per `git archive`:
+`../WheelChairRacer-before-realism-608973d.zip`, 9,593,417 Bytes.
+Kein Commit, Branch, Push, destruktiver Git-Befehl oder zweites Projekt.
+
+Rollstuhl: Poly Haven Wheelchair 01 mit echten Speichen, Naben, Greifringen,
+Rahmen, Bremshebeln und texturiertem Sitz. Sieben getrennte starre Baugruppen,
+richtige Rollachsen, gemeinsam schwenkende Rollen/Gabeln, lokale Fussplatten.
+Figur: bekleidetes 54-Bone-Skinning mit Sitz-, Fuss- und Handmarkern, dezenter
+abschaltbarer Ruhebewegung, manueller Schubgeste ohne Motor und ruhiger
+Armlehnenpose mit Motor. Werkstatt: matte Flaechen, Key/Fill/Rim, Schatten und
+neutraler Reflexionshimmel. Der direkte Rennstart stellt Tageslicht wieder her.
+Workshop und Rennen verwenden dieselbe Presentation am selben Spieler.
+
+Die alte Primitive-Modellgenerierung wurde aus dem Fahrzeugskript entfernt.
+Alle Originalquellen und vorbereiteten Ressourcen liegen lokal vor;
+[Assetquellen und Lizenzen](ASSET_SOURCES.md) enthalten Downloadlinks,
+Pruefsummen, Bearbeitungsschritte und die **KI-Herkunft der Figur**.
+
+### Automatisch Geprueft
+
+Godot `4.7.2.stable.official.ed1daf0bf`, GL Compatibility. Finale Pruefungen:
+
+| Pruefung | Ergebnis |
+| --- | --- |
+| Ressourcenimport / Headless-Start (180 Frames) | Bestanden |
+| Smoke, Headless | 30 bestanden |
+| Upgrades, Headless | 102 bestanden |
+| Rennen, Headless | 71 bestanden, 0 fehlgeschlagen |
+| Upgrades, echte OpenGL-Ausgabe | 128 bestanden |
+| Rennen, echte OpenGL-Ausgabe | 77 bestanden, 0 fehlgeschlagen |
+| Native 1920x1080-Bildaufnahme, sechs Ansichten | Bestanden |
+| Editor-Diagnostik der betroffenen Skripte | Keine gemeldeten Fehler |
+
+Vollstaendige Runde mit InputMap: `00:17.235`, sechs Kontrollpunkte, kein
+Wandkontakt. Ebenfalls geprueft: Pause, Reset, Neustart, Countdown, Ziel,
+Speicherung, alle Motoren, Navigation, Bremsen, Rueckwaerts, Ausrollen,
+Wrist-/Ankle-Ziele, Radachsen, Gabellenkung und abschaltbares Idle.
+Tests verwenden temporaere Speicherpfade; echte Spielstaende bleiben erhalten.
+Dies ersetzt keine menschliche Probefahrt.
+
+### Bilder Und Sichtpruefung
+
+Die Bilder sind echte Godot-Renderaufnahmen, keine Mockups oder Anbieterbilder.
+Vorher wurde vor dem Modelltausch aufgenommen; diese Serie bleibt unveraendert.
+Kameratransformationen und FOV stehen in den JSON-Protokollen. Die Chair-Ansicht
+ist eine Detailansicht und schneidet den oberen Kopf bewusst am Bildrand ab.
+
+| Ansicht | Vorher | Nachher |
+| --- | --- | --- |
+| Workshop mit UI | [Bild](visual-review/presentation/before-workshop.png) | [Bild](visual-review/presentation/after-workshop.png) |
+| Rollstuhl-Detail | [Bild](visual-review/presentation/before-chair.png) | [Bild](visual-review/presentation/after-chair.png) |
+| Seite | [Bild](visual-review/presentation/before-side.png) | [Bild](visual-review/presentation/after-side.png) |
+| Front | [Bild](visual-review/presentation/before-front.png) | [Bild](visual-review/presentation/after-front.png) |
+| Rueckseite | [Bild](visual-review/presentation/before-rear.png) | [Bild](visual-review/presentation/after-rear.png) |
+| Rennen | [Bild](visual-review/presentation/before-race.png) | [Bild](visual-review/presentation/after-race.png) |
+
+Sichtpruefung: Figur/Rollstuhl, Kleidungsoberflaeche, Sitz-/Fussanordnung,
+Handorientierung, Motoranbindung, Schatten, UI-Lesbarkeit und Rennansicht.
+Eine vereinfachte 61K-Figur zeigte Kleidungsrisse und wurde verworfen.
+Die finale Figur behaelt 244,257 Dreiecke ohne automatische LODs; der Rollstuhl
+40,252 mit LODs. Hinzu kommen die vorhandenen Motoren und wenige Fussstuetzen.
+Handgelenk-Zielpruefungen sind kein Nachweis kollisionsfreier Finger/Polster.
+
+### Leistung Und Grenzen
+
+Tatsaechlicher Rechner: Dell G15 Special Edition 5521, rund 64 GiB RAM,
+RTX 3060 Laptop plus Intel Iris Xe. Der Renderer waehlte **Intel Iris Xe**,
+OpenGL 3.3, Treiber 32.0.101.7088. Keine Messung auf ASUS TUF/RTX 4070/16 GB.
+Standalone Godot-Editorbinary, kein Release-Export, native 1920x1080, 2x MSAA,
+VSync aus. Je statischer Ansicht 60 Warmup-Frames, dann 240 Wallclock-Intervalle;
+Spieler-/Rennsimulation eingefroren. Kein GPU-Profiling oder Fahrbenchmark.
+
+| Ansicht | Vorher Mittel ms | Nachher Mittel ms | Nachher p95 ms | Nachher FPS |
+| --- | ---: | ---: | ---: | ---: |
+| Workshop | 24.045 | 6.364 | 8.501 | 157.14 |
+| Chair | 5.843 | 6.441 | 8.228 | 155.25 |
+| Seite | 6.119 | 6.102 | 7.813 | 163.89 |
+| Front | 4.892 | 5.776 | 7.250 | 173.14 |
+| Rueckseite | 10.486 | 6.377 | 8.813 | 156.80 |
+| Rennen | 7.427 | 8.965 | 16.153 | 111.54 |
+
+Rohdaten: [vorher](visual-review/presentation/before.json),
+[nachher](visual-review/presentation/after.json). Werte schwanken erheblich:
+ein frueherer final-topologischer Lauf erreichte im Workshop nur 13.52 FPS
+mit p95 538.99 ms, die anderen Ansichten ca. 84-90 FPS. Die Ursache dieses
+Ausreissers wurde nicht isoliert. Daher kein belastbarer Speedup oder garantiertes
+FPS-Minimum. Die Rennbeleuchtung wurde zusaetzlich korrigiert; der Rennvergleich
+isoliert somit nicht die Modellkosten. RAM/VRAM, Exportgroesse und Langzeitverhalten
+wurden nicht gemessen. Original und vorbereitete Figur werden gemeinsam geladen.
+
+### Offen / Manuell Abzunehmen
+
+- Die Figur ist glaubwuerdiger und detailliert, aber stilisiert, nicht fotoreal.
+  Alter Helm/Brille fehlen. Die Jacke ist warmbraun statt der alten orangen Form.
+- Finger greifen die Ringe nicht exakt; Schubzyklus und Rueckwaertsanimation sind
+  vereinfacht. Kleine Kontaktueberschneidungen sind nicht ausgeschlossen.
+- Keine medizinische/biomechanische Validierung, echte Radphysik, Stoffsimulation
+  oder neu konstruierter realer Motor. Bestehende Motoren bleiben Arcade-Modelle.
+- Hohe Figurenpolygonzahl: fuer mehrere Fahrer/Low-End braucht es gezielte
+  Retopologie und erneut gepruefte LODs; die automatische Reduktion reichte nicht.
+- Nicht getestet: menschliche Probefahrt, Release-Export, Zielhardware,
+  Langzeitsitzung und mehrere Aufloesungen der finalen Darstellung.
+- Keine blockierende Konto-/Lizenz-/Toolabhaengigkeit; der Projektstart ist lokal.
+
+Manuelle Abnahme: F5, UPGRADE/ENGINE, alle drei Motoren und Stats pruefen;
+zurueck zu PLAY, W/S/A/D, Ausrollen, Rueckwaerts und R pruefen; mit Escape
+pausieren/fortsetzen; Runde beenden, neu starten und nach Neustart gespeicherte
+Engine/Bestzeit kontrollieren. Dabei Haende, Fussauflage, Radrotation und
+Bildruhe waehrend Kurven und Motorwechseln beobachten. Dies ist noch offen.
+
+## Historischer Stand
+
+Meilenstein (15.10.2026): Main Menu, persistente Engine-Upgrades,
 ein fahrzeuggebundener Garagen-Showcase und eine verbesserte Fahrerpose mit
 radgekoppelter Schubanimation;
 die folgenden frueheren Renn- und Gestaltungstests bleiben als Nachweise erhalten.

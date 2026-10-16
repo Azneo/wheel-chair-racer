@@ -1,0 +1,19 @@
+Wheelchair 01
+Author: Garreth Dean / Poly Haven
+Source: https://polyhaven.com/a/wheelchair_01
+License: CC0 1.0 Universal
+License evidence: https://polyhaven.com/license
+Legal text: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+Retrieved and checked: 2026-10-16
+
+Local provenance note, not a verbatim copy of the provider's website:
+Poly Haven identifies this model as CC0. Its asset license permits commercial
+use, modification, redistribution and inclusion in sold products or shared
+source projects. Attribution is optional; the credit above is retained for
+traceability. Website logos, promotional renders and website copy are not
+included in this asset permission and were not downloaded into this project.
+
+The source glTF, binary and textures are unchanged. chair_prepared.scn is a
+local derivative with separated wheels/forks, pivots, generated LODs and
+adjusted material roughness. See docs/ASSET_SOURCES.md and
+tools/prepare_presentation.gd for the reproducible transformation.

@@ -116,7 +116,6 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if is_instance_valid(frontend_root) and frontend_root.visible:
-		player.rotate_y(delta * 0.12)
 		return
 	var desired_position: Vector3 = player.global_position + player.global_basis.z * 7.5 + Vector3.UP * 4.5
 	follow_camera.global_position = follow_camera.global_position.lerp(desired_position, 1.0 - exp(-7.0 * delta))
@@ -578,8 +577,19 @@ func _build_frontend_presentation() -> void:
 	garage_environment.background_mode = Environment.BG_COLOR
 	garage_environment.background_color = Color("111619")
 	garage_environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	garage_environment.ambient_light_color = Color("899397")
-	garage_environment.ambient_light_energy = 0.5
+	garage_environment.ambient_light_color = Color("b9c1c4")
+	garage_environment.ambient_light_energy = 0.65
+	var studio_sky := Sky.new()
+	var studio_material := ProceduralSkyMaterial.new()
+	studio_material.sky_top_color = Color("657580")
+	studio_material.sky_horizon_color = Color("d5d9d8")
+	studio_material.ground_horizon_color = Color("b6b9b7")
+	studio_material.ground_bottom_color = Color("303638")
+	studio_material.sky_energy_multiplier = 0.65
+	studio_sky.sky_material = studio_material
+	studio_sky.radiance_size = Sky.RADIANCE_SIZE_128
+	garage_environment.sky = studio_sky
+	garage_environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	garage_environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	upgrade_camera.environment = garage_environment
 
@@ -600,8 +610,8 @@ func _build_garage_dressing() -> void:
 	garage_dressing.name = "UpgradeGarage"
 	garage_dressing.visible = false
 	showcase_stage.add_child(garage_dressing)
-	var floor_material := _material(Color("202628"), 0.55, 0.55)
-	var wall_material := _material(Color("252a2c"), 0.42, 0.72)
+	var floor_material := _ground_material(Color("353c3e"), 1.5, 0.12)
+	var wall_material := _material(Color("353a3c"), 0.9, 0.0)
 	var beam_material := _material(Color("596264"), 0.76, 0.32)
 	var floor := _showcase_box(garage_dressing, Vector3(50.0, 0.18, 40.0), Vector3(0.0, -0.04, 0.0), floor_material)
 	floor.name = "GarageFloor"
@@ -624,13 +634,13 @@ func _build_garage_dressing() -> void:
 			garage_dressing,
 			Vector3(1.65, 2.65, 0.06),
 			Vector3(lateral, 1.75, 5.51),
-			_material(panel_color, 0.4, 0.74)
+			_material(panel_color, 0.88, 0.0)
 		)
 		_showcase_box(
 			garage_dressing,
 			Vector3(1.65, 2.25, 0.06),
 			Vector3(lateral, 4.25, 5.51),
-			_material(panel_color.darkened(0.13), 0.42, 0.72)
+			_material(panel_color.darkened(0.13), 0.9, 0.0)
 		)
 	_showcase_box(garage_dressing, Vector3(16.0, 0.12, 0.16), Vector3(0.0, 5.85, -3.2), beam_material)
 	var warm_strip := _material(Color("ed8650"), 0.15, 0.3)
@@ -654,19 +664,28 @@ func _build_garage_dressing() -> void:
 	garage_key_light = OmniLight3D.new()
 	garage_key_light.name = "WarmKeyLight"
 	garage_key_light.position = Vector3(2.4, 3.5, -2.6)
-	garage_key_light.light_color = Color("f3c99a")
-	garage_key_light.light_energy = 3.8
-	garage_key_light.omni_range = 12.0
-	garage_key_light.shadow_enabled = false
+	garage_key_light.light_color = Color("fff0df")
+	garage_key_light.light_energy = 2.0
+	garage_key_light.omni_range = 9.0
+	garage_key_light.shadow_enabled = true
+	garage_key_light.shadow_bias = 0.035
+	garage_key_light.shadow_normal_bias = 0.6
 	garage_dressing.add_child(garage_key_light)
 	garage_rim_light = OmniLight3D.new()
 	garage_rim_light.name = "CoolRimLight"
 	garage_rim_light.position = Vector3(-3.4, 3.0, 2.4)
-	garage_rim_light.light_color = Color("64bac2")
-	garage_rim_light.light_energy = 2.4
+	garage_rim_light.light_color = Color("bfd6e0")
+	garage_rim_light.light_energy = 1.0
 	garage_rim_light.omni_range = 10.0
 	garage_rim_light.shadow_enabled = false
 	garage_dressing.add_child(garage_rim_light)
+	var fill := OmniLight3D.new()
+	fill.name = "SoftFillLight"
+	fill.position = Vector3(-2.2, 2.4, -3.0)
+	fill.light_color = Color("e4e9e8")
+	fill.light_energy = 0.75
+	fill.omni_range = 7.0
+	garage_dressing.add_child(fill)
 
 
 func _menu_label(parent: Node, text: String, font_size: int, color: Color = WARM_WHITE) -> Label:
@@ -979,6 +998,7 @@ func _return_to_frontend() -> void:
 
 
 func _start_game() -> void:
+	_set_showcase_mode(false)
 	if player.get_parent() == showcase_stage:
 		player.reparent(self)
 	player.set_physics_process(true)

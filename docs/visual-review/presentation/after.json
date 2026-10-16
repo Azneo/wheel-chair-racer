@@ -1,0 +1,64 @@
+{
+	"adapter": "Intel(R) Iris(R) Xe Graphics",
+	"engine": "4.7.2-stable (official)",
+	"method": "Standalone local Godot; VSync off; 60 warmup + 240 wall-clock frame intervals per static view; not GPU timing or driving benchmark",
+	"renderer": "gl_compatibility",
+	"resolution": "1920x1080 native viewport, 2x MSAA",
+	"stage": "after",
+	"views": [
+		{
+			"camera": "Transform3D(-0.94233835, -0.021764098, 0.33395335, 0, 0.99788314, 0.065033115, -0.3346618, 0.06128319, -0.9403435, 42.1, 1.35, -5.35)",
+			"fov": 50.0,
+			"frames": 240,
+			"mean_fps": 157.137478925572,
+			"mean_frame_ms": 6.36385416666667,
+			"p95_frame_ms": 8.501,
+			"view": "workshop"
+		},
+		{
+			"camera": "Transform3D(-0.068708174, 0.09014106, -0.99355614, 0, 0.99590963, 0.09035459, 0.9976368, 0.0062080985, -0.06842714, 36.112167, 1.23, -0.2339809)",
+			"fov": 40.0,
+			"frames": 240,
+			"mean_fps": 155.252181293147,
+			"mean_frame_ms": 6.44113333333333,
+			"p95_frame_ms": 8.228,
+			"view": "chair"
+		},
+		{
+			"camera": "Transform3D(-0.7921259, 0.03481724, -0.6093639, 0, 0.9983717, 0.057043985, 0.61035776, 0.045186017, -0.79083604, 37.824364, 1.33, -2.7416441)",
+			"fov": 40.0,
+			"frames": 240,
+			"mean_fps": 163.887857002382,
+			"mean_frame_ms": 6.10173333333333,
+			"p95_frame_ms": 7.813,
+			"view": "side"
+		},
+		{
+			"camera": "Transform3D(0.6216101, 0.053527128, -0.7814958, 0, 0.9976626, 0.06833307, 0.7833268, -0.042476527, 0.6201571, 37.101692, 1.38, 2.299957)",
+			"fov": 40.0,
+			"frames": 240,
+			"mean_fps": 173.135189727312,
+			"mean_frame_ms": 5.77583333333333,
+			"p95_frame_ms": 7.25,
+			"view": "front"
+		},
+		{
+			"camera": "Transform3D(-0.62161034, -0.052106146, 0.78159165, 0, 0.99778515, 0.06651905, -0.7833266, 0.04134893, -0.6202336, 42.898308, 1.38, -2.299957)",
+			"fov": 40.0,
+			"frames": 240,
+			"mean_fps": 156.804225351192,
+			"mean_frame_ms": 6.37737916666667,
+			"p95_frame_ms": 8.813,
+			"view": "rear"
+		},
+		{
+			"camera": "Transform3D(1, 0, 0, 0, 0.93547213, 0.35340056, 0, -0.35340056, 0.93547213, 12, 4.58, 23.5)",
+			"fov": 68.0,
+			"frames": 240,
+			"mean_fps": 111.543600766862,
+			"mean_frame_ms": 8.96510416666667,
+			"p95_frame_ms": 16.153,
+			"view": "race"
+		}
+	]
+}

@@ -49,19 +49,12 @@ func _gameplay_hud_is_hidden() -> bool:
 	return true
 
 
-func _hands_are_on_handrims(vehicle: Node3D) -> bool:
-	if vehicle.arm_hand_nodes.size() != 2:
-		return false
-	for arm_index in range(vehicle.arm_hand_nodes.size()):
-		var side: float = vehicle.arm_sides[arm_index]
-		var hand_position: Vector3 = (
-			vehicle.rider_upper_body.position + vehicle.arm_hand_nodes[arm_index].position
-		)
-		var radial_distance: float = Vector2(
-			hand_position.y - 0.55,
-			hand_position.z - 0.12
-		).length()
-		if absf(radial_distance - 0.415) > 0.03 or absf(hand_position.x - side * 0.685) > 0.03:
+
+func _hands_reach_targets(vehicle: Node3D) -> bool:
+	for side_index in range(2):
+		var prefix: String = "Left" if side_index == 0 else "Right"
+		var hand_position: Vector3 = vehicle.visuals.bone_position(prefix + "Hand")
+		if hand_position.distance_to(vehicle.visuals.hand_anchors[side_index].position) > 0.045:
 			return false
 	return true
 
@@ -133,26 +126,34 @@ func _run() -> void:
 	_check(game.frontend_page_name == "upgrades", "UPGRADE opens category selection")
 	_check(game.upgrade_camera.is_current() and game.garage_dressing.visible, "Upgrade screens switch to the garage showcase")
 	_check(game.player.rotation.y != PI, "Garage camera presents the player at a three-quarter angle")
-	var seat_mesh := game.player.seat_cushion.mesh as BoxMesh
-	var seat_top: float = game.player.seat_cushion.position.y + seat_mesh.size.y * 0.5
-	var pelvis_mesh := game.player.rider_pelvis.mesh as SphereMesh
-	var pelvis_bottom: float = (
-		game.player.rider_pelvis.position.y
-		- pelvis_mesh.height * game.player.rider_pelvis.scale.y * 0.5
-	)
-	_check(absf(pelvis_bottom - seat_top) < 0.02, "Pelvis sits directly on the cushion")
-	var thighs_clear_seat: bool = game.player.thigh_segments.size() == 2
-	for thigh in game.player.thigh_segments:
-		var thigh_mesh := thigh.mesh as CapsuleMesh
-		thighs_clear_seat = thighs_clear_seat and thigh.position.y - thigh_mesh.radius > seat_top
-	_check(thighs_clear_seat, "Thighs rest above the seat instead of clipping through it")
-	var shins_angle_forward: bool = game.player.lower_leg_segments.size() == 2
-	for leg_index in range(game.player.lower_leg_segments.size()):
-		var shin: MeshInstance3D = game.player.lower_leg_segments[leg_index]
-		var thigh: MeshInstance3D = game.player.thigh_segments[leg_index]
-		shins_angle_forward = shins_angle_forward and shin.position.y < thigh.position.y and shin.position.z < thigh.position.z
-	_check(shins_angle_forward, "Bent lower legs extend down and forward")
-	_check(_hands_are_on_handrims(game.player), "Resting hands sit on the handrims")
+	var visual: Node3D = game.player.visuals
+	_check(visual.skeleton.get_bone_count() == 54, "Imported rider retains the 54-bone skinned rig")
+	var rider_mesh: MeshInstance3D = visual.rider.find_child("char1", true, false)
+	_check(rider_mesh.mesh.surface_get_array_index_len(0) / 3 == 244257, "Runtime rider preserves the verified source topology")
+	_check(visual.bone_position("Hips").distance_to(visual.seat_anchor.position) < 0.002, "Pelvis bone is aligned to the authored seated target")
+	for side_index in range(2):
+		var prefix: String = "Left" if side_index == 0 else "Right"
+		var hip: Vector3 = visual.bone_position(prefix + "UpLeg")
+		var knee: Vector3 = visual.bone_position(prefix + "Leg")
+		var ankle: Vector3 = visual.bone_position(prefix + "Foot")
+		_check(knee.z < hip.z - 0.30 and absf(knee.y - hip.y) < 0.15, prefix + " thigh follows a seated pose")
+		_check(ankle.y < knee.y - 0.3 and ankle.distance_to(visual.foot_anchors[side_index].position) < 0.02, prefix + " ankle reaches the foot-support target")
+	_check(_hands_reach_targets(game.player), "Actual wrist bones reach the resting hand targets")
+	var wheel_origin: Vector3 = visual.rear_wheels[0].position
+	visual.reset_wheels()
+	visual.update_wheels(0.10, 0.4)
+	_check(visual.rear_wheels[0].rotation.x > 0.1 and visual.front_wheels[0].rotation.x > 0.1, "Both wheel sizes rotate about their local axle")
+	_check(visual.rear_wheels[0].position == wheel_origin, "Rotation does not translate the wheel pivot")
+	_check(visual.front_forks[0].has_node("ForkLeft") and visual.front_forks[1].has_node("ForkRight"), "Visible caster forks share their wheels' steering parents")
+	_check(is_equal_approx(visual.front_forks[0].rotation.y, 0.14) and is_zero_approx(visual.front_forks[0].get_node("ForkLeft").rotation.x), "Caster forks steer without spinning around the wheel axle")
+	visual.update_wheels(-0.10, 0.0)
+	_check(absf(visual.rear_angle) < 0.001 and absf(visual.caster_angle) < 0.001, "Reverse distance exactly reverses wheel rotation")
+	visual.idle_enabled = false
+	visual.update_pose(0.5, false, false, false)
+	var still_pose: Transform3D = visual.skeleton.get_bone_global_pose(visual.bone_ids["Spine"])
+	visual.update_pose(0.5, false, false, false)
+	_check(still_pose.is_equal_approx(visual.skeleton.get_bone_global_pose(visual.bone_ids["Spine"])), "Workshop idle can be disabled")
+	visual.idle_enabled = true
 	await _capture_screenshot("categories")
 	game.player.rotation.y = 0.0
 	await _frames(2)
@@ -224,30 +225,16 @@ func _run() -> void:
 	_check(is_equal_approx(game.player.MAX_SPEED, 65.0 / 3.6) and is_equal_approx(game.player.ACCELERATION, 55.0 / 3.6), "Gameplay receives the selected engine stats")
 	await _frames(182)
 	_check(game.race.state == RaceController.State.RACING, "Upgraded player becomes controllable when the countdown ends")
-	var resting_hands: Array[Vector3] = []
-	for hand in game.player.arm_hand_nodes:
-		resting_hands.append(game.player.rider_upper_body.position + hand.position)
+	var resting_hand: Vector3 = visual.bone_position("LeftHand")
 	Input.action_press("accelerate")
 	await _frames(30)
 	Input.action_release("accelerate")
 	_check(game.player.speed > 7.4, "Upgraded acceleration affects actual vehicle movement")
-	_check(game.player.drive_pose_weight > 0.9, "Driving smoothly blends the rider into the push pose")
+	_check(game.player.drive_pose_weight < 0.01, "Motorized driving does not force a manual push animation")
 	_check(absf(game.player.wheel_roll_angle) > 0.5, "Driving rotates both wheelchair wheels")
-	var hands_moved: bool = false
-	for arm_index in range(game.player.arm_hand_nodes.size()):
-		var hand_position: Vector3 = (
-			game.player.rider_upper_body.position + game.player.arm_hand_nodes[arm_index].position
-		)
-		hands_moved = hands_moved or hand_position.distance_to(resting_hands[arm_index]) > 0.04
-	_check(hands_moved, "Arms stroke with the rotating wheels")
-	var push_contact_seen: bool = false
-	for frame_index in range(120):
-		if _hands_are_on_handrims(game.player):
-			push_contact_seen = true
-			break
-		await _frames(1)
-	_check(push_contact_seen, "Hands return to the handrim during the synchronized push phase")
-	await _capture_driving_view("driving-push")
+	_check(visual.bone_position("LeftHand").distance_to(resting_hand) < 0.01, "Motorized rider keeps a stable hand position")
+	_check(_hands_reach_targets(game.player), "Motorized wrists remain on their support targets")
+	await _capture_driving_view("driving-motorized")
 	var heading_before_steering: float = game.player.rotation.y
 	Input.action_press("accelerate")
 	Input.action_press("steer_left")
@@ -273,12 +260,24 @@ func _run() -> void:
 	Input.action_release("brake")
 	_check(game.player.speed < -0.5, "Holding brake from rest drives the wheelchair backward")
 	_check(game.player.wheel_roll_angle > wheel_roll_before_reverse, "Reverse movement rotates the wheels backward")
-	_check(game.player.drive_pose_weight > 0.9, "The rider animates during reverse propulsion")
+	_check(game.player.drive_pose_weight < 0.01, "Motorized reverse keeps the supported seated pose")
 	await _capture_driving_view("driving-reverse")
 	await _frames(105)
 	_check(game.player.speed > -0.1 and game.player.speed < 0.1, "Rolling resistance stops reverse movement")
 	_check(game.player.drive_pose_weight < 0.02, "Rider returns to rest after reverse movement stops")
 	_check(game.player.installed_engine_id == "launch", "Engine remains attached throughout driving animation")
+	upgrades.call("select_engine", "")
+	await _frames(26)
+	game.player.reset_to_start()
+	Input.action_press("accelerate")
+	await _frames(30)
+	_check(game.player.drive_pose_weight > 0.9, "Stock rider pushes while accelerating")
+	await _capture_driving_view("driving-push")
+	Input.action_release("accelerate")
+	await _frames(20)
+	_check(game.player.speed > 0.1 and game.player.drive_pose_weight < 0.01, "Coasting releases the push pose while wheels keep rolling")
+	upgrades.call("select_engine", "launch")
+	await _frames(26)
 	game._return_to_main_menu()
 	_check(game.race.state == RaceController.State.READY and game.frontend_page_name == "main", "Gameplay can return to the main menu")
 	_check(upgrades.get("selected_engine_id") == "launch", "Selected engine remains active after gameplay navigation")

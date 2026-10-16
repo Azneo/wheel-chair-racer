@@ -2,10 +2,13 @@
 
 Spielbarer 3D-Prototyp im vorhandenen Godot-Projekt. Entwickelt und geprueft
 mit Godot **4.7.2 stable**, GDScript, GL Compatibility und der vorhandenen
-Jolt-Physikkonfiguration. Keine externen Modelle oder Zusatzpakete erforderlich.
+Jolt-Physikkonfiguration. Die verwendeten CC0-Modelle sind lokal enthalten;
+keine Zusatzpakete oder Downloads beim Spielstart erforderlich.
 
 Aktueller Meilenstein: Main Menu mit persistenten Engine-Upgrades und
-Ein-Runden-Zeitrennen. Technischer Stand, Testnachweise und manuelle Abnahme:
+Ein-Runden-Zeitrennen sowie ueberarbeitete Rollstuhl-/Fahrerdarstellung.
+Assetquellen, Lizenzen und KI-Herkunft: [docs/ASSET_SOURCES.md](docs/ASSET_SOURCES.md).
+Technischer Stand, Testnachweise und manuelle Abnahme:
 [docs/STATUS.md](docs/STATUS.md).
 
 ## Start
@@ -58,12 +61,12 @@ prozedurale Baugruppen, die unter dem Sitz direkt am Fahrzeug montiert sind.
 Beim Wechsel gleitet das alte Modell heraus und das neue an seinen Platz.
 Die gewaehlte Engine bleibt auch beim Start des Rennens am selben Fahrzeug.
 
-Die geometrische Fahrerfigur sitzt auf einer eigenen, spaeter austauschbaren
-Rider-Hierarchie. Becken und Oberschenkel liegen auf dem Sitz, Unterschenkel
-und Schuhe folgen Knie und Fussstuetze. Beim Fahren verfolgen beide Haende die
-Handringe waehrend des Schubbogens; Arme und Haende gehen weich in die Ruhepose
-zurueck. Die Pose nutzt die vorhandenen Radrotationen und ein leichtes
-Zweisegment-Armsetup statt eines zusaetzlichen Rig- oder IK-Plugins.
+Die bekleidete, skinned Fahrerfigur besitzt ein 54-Knochen-Skelett. Sitz-, Fuss-
+und Handmarker bestimmen die Pose; `idle_enabled=false` schaltet die dezente
+Ruhebewegung ab. Ohne Motor begleitet ein einfacher Schubzyklus die aktive
+Beschleunigung. Mit Motor bleiben die Haende an den Armlehnen; beim Ausrollen
+endet die Schubbewegung. Hinterraeder und Rollen drehen wegabhaengig, die
+Vorderradgabeln schwenken separat. Keine zusaetzlichen Physik- oder IK-Plugins.
 
 Ohne W rollt das Fahrzeug aus. S hat Vorrang vor W, bremst bis zum Stillstand
 und faehrt bei weiterem Halten langsam rueckwaerts. Vor engen Kurven bremsen;
@@ -100,19 +103,18 @@ gespeichert, auf Windows normalerweise in
   drei am Rollstuhl montierten, unterscheidbaren Motorbaugruppen.
 - Geschlossene Stadionstrecke mit zwei Geraden, zwei Halbkreisen, solidem
   Boden, Innen-/Aussenbegrenzungen und Startmarkierung.
-- Geometrischer Rollstuhl mit Rahmen, Sitz, Greifreifen, Speichen,
-  Vorderraedern und einer rund modellierten sitzenden Fahrerfigur mit Helm und
-  Gesichtszuegen.
+- Detaillierter CC0-Rollstuhl mit PBR-Texturen, getrennten Rad-/Gabelachsen,
+  Fussstuetzen und bekleideter CC0-Figur; gemeinsame Darstellung in Garage/Rennen.
 - CharacterBody3D-Arcadebewegung mit Kollisionen und rein visueller Raddrehung.
 - Automatische Third-Person-Kamera, Sonnenlicht, Umgebungslicht,
   Geschwindigkeitsanzeige und sichtbare Steuerungsleiste.
 
 ## Tests Wiederholen
 
-PowerShell im Projektordner. Godot 4.7.2 wurde hier installiert:
+PowerShell im Projektordner. Hier verifizierter Pfad, bei Bedarf anpassen:
 
 ```powershell
-$godot = "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64_console.exe"
+$godot = "$env:USERPROFILE\Desktop\game_engeniring\Godot_v4.7.2-stable_win64_console.exe"
 & $godot --version
 & $godot --headless --path . --editor --import
 & $godot --headless --path . --quit-after 180
@@ -139,7 +141,26 @@ ein separates temporaeres `user://race-tests-*`-Verzeichnis; echte Bestzeiten
 werden weder gelesen noch ueberschrieben. Eine komplette Runde wird dabei mit
 automatisierten InputMap-Eingaben gefahren, nicht durch Teleportieren abgeschlossen.
 
-## Verifizierter Stand
+## Aktueller Nachweis (16.10.2026)
+
+Import und Headless-Start bestanden. Headless: 30 Fahr-, 102 Upgrade-, 71
+Rennpruefungen. Echte GL-Compatibility-Ausgabe auf Intel Iris Xe: 128 Upgrade-
+und 77 Rennpruefungen. Vollstaendige automatisierte Runde: `00:17.235`, ohne
+Wandkontakt. Keine manuelle Probefahrt, kein Export- oder Zielhardware-Benchmark.
+
+Echte native 1080p-Vergleiche: [vorher](docs/visual-review/presentation/before-side.png),
+[nachher](docs/visual-review/presentation/after-side.png),
+[Workshop](docs/visual-review/presentation/after-workshop.png),
+[Rennen](docs/visual-review/presentation/after-race.png).
+Messmethodik, Einschraenkungen und manuelle Checkliste: [STATUS](docs/STATUS.md).
+
+Neue Bilder erzeugen, ohne die echte Vorher-Serie zu ueberschreiben:
+
+```powershell
+& $godot --path . --rendering-method gl_compatibility --resolution 1920x1080 --script res://tests/visual_review.gd -- --presentation-after
+```
+
+## Historischer Nachweis Vor Der Modellueberarbeitung
 
 - Godot-Version: `4.7.2.stable.official.ed1daf0bf`.
 - Ressourcenimport und Headless-Start erfolgreich, keine verbleibenden

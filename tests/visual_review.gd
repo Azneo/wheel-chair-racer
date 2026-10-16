@@ -93,6 +93,10 @@ func _run() -> void:
 		push_error("Visual review requires a real graphical display, not --headless.")
 		quit(1)
 		return
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--presentation-"):
+			await _presentation_review(argument.trim_prefix("--presentation-"))
+			return
 	var stage: String = "race"
 	var capture_only: bool = false
 	for argument in OS.get_cmdline_user_args():
@@ -161,6 +165,92 @@ func _run() -> void:
 			await _capture(OUTPUT + stage + "-" + pose["name"] + "-" + label + ".png")
 	var output := FileAccess.open(OUTPUT + stage + ".json", FileAccess.WRITE)
 	_check(output != null, "Measurement report is writable")
+	if output != null:
+		output.store_string(JSON.stringify(report, "\t"))
+		output.close()
+	game.queue_free()
+	await process_frame
+	quit(1 if failed else 0)
+
+
+func _presentation_review(stage: String) -> void:
+	_check(stage in ["before", "after"], "Known presentation comparison stage")
+	if failed:
+		quit(1)
+		return
+	var directory: String = OUTPUT + "presentation/"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(directory))
+	Engine.max_fps = 0
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	DisplayServer.window_set_size(Vector2i(1920, 1080))
+	root.content_scale_size = Vector2i(1920, 1080)
+	root.msaa_3d = Viewport.MSAA_2X
+	game = MainScene.instantiate()
+	game.best_time_path = ""
+	root.add_child(game)
+	current_scene = game
+	game.upgrade_data.selected_engine_id = "rally"
+	game._refresh_upgrade_ui()
+	game._open_engine_upgrades()
+	game.player._process(0.0)
+	game.set_process(false)
+	game.player.set_process(false)
+	game.player.set_physics_process(false)
+	game.race.set_physics_process(false)
+	game.player.rotation.y = PI - 0.9
+	var report: Dictionary = {
+		"stage": stage,
+		"engine": Engine.get_version_info()["string"],
+		"adapter": RenderingServer.get_video_adapter_name(),
+		"renderer": RenderingServer.get_current_rendering_method(),
+		"resolution": "1920x1080 native viewport, 2x MSAA",
+		"method": "Standalone local Godot; VSync off; 60 warmup + 240 wall-clock frame intervals per static view; not GPU timing or driving benchmark",
+		"views": [],
+	}
+	var comparison_camera := Camera3D.new()
+	game.add_child(comparison_camera)
+	comparison_camera.environment = game.garage_environment
+	var views: Array[String] = ["workshop", "chair", "side", "front", "rear", "race"]
+	for view in views:
+		game.frontend_root.visible = view == "workshop"
+		game.stats_overlay_root.visible = view == "workshop"
+		if view == "workshop":
+			game.upgrade_camera.make_current()
+		elif view == "race":
+			game._start_game()
+			_check(game.sun_light.visible and not game.garage_dressing.visible, "Race restores outdoor lighting when started from the workshop")
+			game.set_process(false)
+			game.player.set_physics_process(false)
+			game.race.set_physics_process(false)
+			game.race_menu.hide()
+			game.countdown_label.hide()
+			game.follow_camera.make_current()
+			game._reset_camera()
+		else:
+			var offset := Vector3(2.6, 1.15, -2.9)
+			var target := Vector3(0.0, 0.8, -0.05)
+			if view == "side":
+				offset = Vector3(3.5, 1.25, 0.0)
+				target.y = 1.05
+			elif view == "front":
+				offset = Vector3(0.0, 1.3, -3.7)
+				target.y = 1.05
+			elif view == "rear":
+				offset = Vector3(0.0, 1.3, 3.7)
+				target.y = 1.05
+			comparison_camera.fov = 40.0
+			comparison_camera.global_position = game.player.to_global(offset)
+			comparison_camera.look_at(game.player.to_global(target))
+			comparison_camera.make_current()
+		var measurement: Dictionary = await _measure()
+		measurement["view"] = view
+		measurement["camera"] = var_to_str(root.get_camera_3d().global_transform)
+		measurement["fov"] = root.get_camera_3d().fov
+		report["views"].append(measurement)
+		await _capture(directory + stage + "-" + view + ".png")
+		print("PRESENTATION " + view + ": " + JSON.stringify(measurement))
+	var output := FileAccess.open(directory + stage + ".json", FileAccess.WRITE)
+	_check(output != null, "Presentation report is writable")
 	if output != null:
 		output.store_string(JSON.stringify(report, "\t"))
 		output.close()
