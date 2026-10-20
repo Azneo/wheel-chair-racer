@@ -18,7 +18,8 @@ func _run() -> void:
 			if path.contains("wheelchair"):
 				_prepare_chair(instance.mesh)
 			else:
-				_prepare_rider(instance.mesh)
+				if not OS.get_cmdline_user_args().has("--inspect-fit"):
+					_prepare_rider(instance.mesh)
 		for node in model.find_children("*", "Skeleton3D", true, false):
 			var skeleton := node as Skeleton3D
 			print("SKELETON ", skeleton.get_path(), " transform=", skeleton.global_transform)
@@ -94,6 +95,11 @@ func _prepare_chair(mesh: Mesh) -> void:
 		components[component]["triangles"] += 1
 		for corner in range(3):
 			components[component]["bounds"] = components[component]["bounds"].expand(vertices[indices[index + corner]])
+	if OS.get_cmdline_user_args().has("--inspect-fit"):
+		for component in components.values():
+			if component["triangles"] > 100:
+				print("FIT COMPONENT triangles=", component["triangles"], " bounds=", component["bounds"])
+		return
 	var pivots: Array[Vector3] = [
 		Vector3.ZERO,
 		Vector3(-0.3637, 0.3431, -0.1484),

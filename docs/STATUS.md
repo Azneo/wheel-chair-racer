@@ -1,5 +1,94 @@
 # Projektstatus: Main Menu, Upgrades und Ein-Runden-Zeitrennen
 
+## Sitzpose Und Wiederverwendbare Constraints (19.10.2026)
+
+Die fehlgeschlagene Schienbein-Erweiterung der Sitzhoehenmessung ist ersetzt:
+Becken/Oberschenkel bestimmen die Auflage, Beine werden bei festen Fusszielen
+separat auf Reichweite und Sitz-/Rahmenfreiheit geprueft. Begrenzte Sitztiefen-
+und Oberkoerpersuche pruefen die gemeinsame Erreichbarkeit; Konflikte werden
+explizit gemeldet, statt den ganzen Fahrer unbemerkt anzuheben.
+
+Motorwechsel verwenden eine gemessene Handhuelle, korrigierte Handflaechen,
+deterministische Ellbogenkandidaten und einen geglaetteten 0.4-Sekunden-Pfad.
+Die Reichweitenpruefung umfasst Schubphasen und beide Atemextreme. Sitzprofil am
+Fahrzeug konfigurierbar; Fahrphysik, Strecke, Kameras und bestehende fremde
+Aenderungen bleiben erhalten. Kein Reset, Checkout oder Commit.
+
+Ergebnisse: 52 gezielte Sitzpose-, 31 Smoke-, 79 Renn- und 205 Upgrade-Checks
+headless bestanden; 245 grafische Upgrade-Checks bei 1080p auf Intel Iris Xe.
+Automatische Runde weiterhin 00:17.235 ohne Wandkontakt. Finale Front-/Seiten-
+und Schubaufnahmen angesehen; keine menschliche Probefahrt. Handrim-Abstand
+etwa 2.1-2.4 cm, Motor-Handauflage etwa 8 mm: keine exakte Greifsimulation.
+
+Profilfelder, Integrationsschritte, Nachweise und Einschraenkungen:
+[SEATING.md](SEATING.md). Die folgenden Berichte sind historische Zwischenstaende.
+
+## Handfreiheit Und Workshop-Orbit (16.10.2026)
+
+Ursache der Handueberschneidung: Die STOCK-Skelettpose platzierte die Handgelenke
+bei X=+/-0.558 nahe am Rad und richtete die Finger abwaerts in dessen Volumen.
+Die Figur besitzt keine physikalischen Handkollider; die Fahrzeugkollision war
+nicht ursaechlich. Die manuelle Handbahn liegt jetzt weiter aussen und hoeher
+(X=+/-0.66), mit angepasster Fingerorientierung. Position und Orientierung blenden
+in 0.32 Sekunden zwischen Armlehnen- und manueller Pose um, auch bei Gegenwechseln.
+Fahrphysik, Radkollisionen, Modelle und Engine-Stats wurden nicht veraendert.
+
+Die vorher feste Workshop-Kamera erlaubt jetzt horizontales Orbit und begrenzte
+Hoehenaenderung per linkem Mausziehen ueber dem Modell. Die fokussierbaren Buttons
+< / FRONT / > bieten 45-Grad-Schritte und direkte Vorderansicht. Startansicht ist
+schraeg von vorn. Motorwechsel erhalten den Blickwinkel. Nur im Workshop und
+READY aktiv; beim Rennstart wird der Drag beendet und die UI ausgeblendet.
+
+Pruefung: 31 Smoke-, 79 Renn- und 158 Upgrade-Checks headless bestanden, ebenso
+Import und Start. Automatische Runde weiterhin 00:17.235 ohne Wandkontakt.
+Grafisch 192 Upgrade-Checks bei 720p, nach ergaenzten Bewegungstests 198 bei 1080p
+bestanden (GL Compatibility, Intel Iris Xe). Mausereignisse durchlaufen den
+Viewport-GUI-Pfad, Tastaturereignisse Input.parse_input_event. Getestet wurden
+beide Motorzustaende, Ansichtserhalt, Front/Seite/Rueckseite, Begrenzung der Hoehe,
+deaktivierter Orbit im Rennen und die bestehende Fahrsteuerung.
+
+Handtest: Aus Originalgewichten/Bind-Posen verformte Hand-/Fingervertices werden
+gegen konservative Radzylinder geprueft, fuer sechs Wechselablaeufe und je 16
+Phasen vorwaerts/rueckwaerts sowie Ruhe/Ausrollen. Dies ist eine diskrete
+Geometriepruefung, keine kontinuierliche Kollisionssimulation oder exakte
+Greifsimulation. Echte Front-/Seiten-/Renn- und Wechselaufnahmen wurden angesehen;
+Gesicht sichtbar, keine Hand-Rad-Durchdringung in den geprueften Ansichten.
+Aufnahmen: user://upgrade-menu-51388-1583004-*.png (1080p) und
+user://upgrade-menu-32720-1503380-*.png (720p). Keine menschliche Probefahrt.
+
+## Reviewkorrekturen (16.10.2026)
+
+- Fahr- und Renntests verwenden vor dem Szenenstart einen expliziten STOCK-Zustand
+  ohne persoenlichen Upgrade-Speicherpfad. Keine Aenderung an echten Spielstaenden.
+- Upgrade-Speicherung schreibt eine temporaere Datei und ersetzt das Ziel erst
+  nach erfolgreichem Flush. Bei Fehler bleiben Auswahl und `save_pending` im
+  Speicher; identische Auswahl versucht erneut zu schreiben. Erst Erfolg loescht
+  Fehler und Pending-Status. Fehlgeschlagene Ersetzungen entfernen die Tempdatei.
+- Ungesicherte Bestzeiten werden beim naechsten Rennversuch, bei jedem Zieleinlauf
+  und bei Rueckkehr zum Hauptmenue erneut gespeichert. Eine langsamere Runde kann
+  so den bereits schnelleren, noch ungesicherten Rekord retten. Kein Retry pro Frame.
+- ENGINE bietet eine tastaturbedienbare STOCK-Aktion mit Motorabbau, Basisstats,
+  sichtbarer Auswahl und persistenter Speicherung. Bestehende drei Motoren bleiben.
+- Regressionen pruefen einen simulierten Austauschfehler (alte Datei bleibt
+  bytegleich), einen echten FileAccess-Fehler, identische Retry-Auswahl, frisches
+  Laden und Bestzeitrettung. Tatsachlicher Austausch vorhandener Dateien auf
+  Windows wird durch die erfolgreichen Engine-Wechsel mitgeprueft; ein Stromausfall
+  oder Prozessabbruch waehrend des Schreibens wurde nicht provoziert.
+
+Aktuelle Ergebnisse: Import/Headless-Start bestanden; 31 Smoke-, 124 Upgrade-
+und 79 Rennpruefungen ohne Grafik. Automatische STOCK-Runde `00:17.235`, kein
+Wandkontakt. Je 152 grafische Upgrade-Pruefungen bei 1280x720 und 1920x1080 auf
+Intel Iris Xe bestanden. STOCK-Aufnahmen beider Groessen angesehen, Buttons und
+Fokusrahmen passen ins Fenster. Tab/Enter durch Hauptmenue, Kategorien, Engine,
+STOCK und BACK wird mit InputEventKey geprueft, nicht nur mit Signalaufrufen.
+Die Speicherwarnungen dieser Testlaeufe sind erwartet. Keine gemeldeten
+Skriptdiagnostikfehler. Die aelteren Testergebnisse unten bleiben historisch.
+
+Bewusst nicht Teil dieses schnellen Durchgangs: frei belegbare Fahraktionen,
+Gamepads, Architekturumbau und menschliche Probefahrt. Die Fahrphysik, Strecke
+und Darstellung wurden nicht veraendert. Testbefehle und aktueller lokaler
+Godot-Pfad stehen in der [README](../README.md).
+
 ## Modell- Und Workshopueberarbeitung (16.10.2026)
 
 Umgesetzt im vorhandenen Projekt, ohne Aenderung an Strecke, InputMap,

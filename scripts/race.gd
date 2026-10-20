@@ -16,6 +16,7 @@ var previous_best_ms: int = 0
 var result_ms: int = 0
 var new_record: bool = false
 var save_failed: bool = false
+var save_pending: bool = false
 var save_path: String = "user://best_time_v1.json"
 var checkpoints: Array[Transform3D] = []
 var finish: Transform3D
@@ -50,6 +51,7 @@ func _input(event: InputEvent) -> void:
 
 
 func start_attempt() -> void:
+	retry_best_save()
 	get_tree().paused = false
 	state = State.COUNTDOWN
 	elapsed_seconds = 0.0
@@ -58,7 +60,6 @@ func start_attempt() -> void:
 	result_ms = 0
 	previous_best_ms = 0
 	new_record = false
-	save_failed = false
 	player.driving_enabled = false
 	player.recovery_transform = player.spawn_transform
 	player.reset_to_start()
@@ -72,6 +73,7 @@ func toggle_pause() -> void:
 
 
 func return_to_ready() -> void:
+	retry_best_save()
 	get_tree().paused = false
 	state = State.READY
 	elapsed_seconds = 0.0
@@ -145,8 +147,18 @@ func _finish_attempt() -> void:
 	new_record = best_ms == 0 or result_ms < best_ms
 	if new_record:
 		best_ms = result_ms
-		save_failed = not _save_best()
+		save_pending = true
+	retry_best_save()
 	state_changed.emit()
+
+
+func retry_best_save() -> bool:
+	if not save_pending:
+		return true
+	save_failed = not _save_best()
+	save_pending = save_failed
+	updated.emit()
+	return not save_failed
 
 
 func countdown_text() -> String:

@@ -11,6 +11,9 @@ Assetquellen, Lizenzen und KI-Herkunft: [docs/ASSET_SOURCES.md](docs/ASSET_SOURC
 Technischer Stand, Testnachweise und manuelle Abnahme:
 [docs/STATUS.md](docs/STATUS.md).
 
+Wiederverwendbare Sitzprofile, Reihenfolge der Pose-Constraints und Integration
+weiterer Rollstuehle: [docs/SEATING.md](docs/SEATING.md).
+
 ## Start
 
 1. Dieses `project.godot` in Godot oeffnen.
@@ -41,6 +44,11 @@ und **EXIT** beendet das Spiel.
 
 Unter **ENGINE** kann genau eines von drei Upgrades ausgewaehlt werden:
 
+**STOCK / REMOVE MOTOR** entfernt den Motor wieder und speichert die Basiswahl.
+Die Aktion ist wie die Engine-Karten mit Tab und Enter bedienbar. Nach einem
+Speicherfehler versucht die erneute Auswahl derselben Engine die Speicherung
+noch einmal. Upgrade-Dateien werden erst temporaer geschrieben und dann ersetzt.
+
 | Engine | Max Speed | Acceleration |
 | --- | ---: | ---: |
 | COMET | +10 km/h | +0 km/h/s |
@@ -60,6 +68,12 @@ eigener Kamera und dezentem Showroom-Licht. Der Rollstuhl bleibt als grosses
 prozedurale Baugruppen, die unter dem Sitz direkt am Fahrzeug montiert sind.
 Beim Wechsel gleitet das alte Modell heraus und das neue an seinen Platz.
 Die gewaehlte Engine bleibt auch beim Start des Rennens am selben Fahrzeug.
+
+Die Workshop-Kamera startet schraeg von vorn. Mit gedrueckter linker Maustaste
+ueber dem Modell drehen; alternativ die Buttons **<**, **FRONT**, **>** verwenden
+(auch mit Tab/Enter). FRONT zeigt das Gesicht, die Pfeile drehen jeweils um
+45 Grad. Der Blickwinkel bleibt bei Motorwechseln erhalten. Im Rennen sind diese
+Bedienelemente inaktiv; Fahrsteuerung und Folgekamera bleiben unveraendert.
 
 Die bekleidete, skinned Fahrerfigur besitzt ein 54-Knochen-Skelett. Sitz-, Fuss-
 und Handmarker bestimmen die Pose; `idle_enabled=false` schaltet die dezente
@@ -114,7 +128,7 @@ gespeichert, auf Windows normalerweise in
 PowerShell im Projektordner. Hier verifizierter Pfad, bei Bedarf anpassen:
 
 ```powershell
-$godot = "$env:USERPROFILE\Desktop\game_engeniring\Godot_v4.7.2-stable_win64_console.exe"
+$godot = "$env:USERPROFILE\Desktop\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe"
 & $godot --version
 & $godot --headless --path . --editor --import
 & $godot --headless --path . --quit-after 180
@@ -141,12 +155,33 @@ ein separates temporaeres `user://race-tests-*`-Verzeichnis; echte Bestzeiten
 werden weder gelesen noch ueberschrieben. Eine komplette Runde wird dabei mit
 automatisierten InputMap-Eingaben gefahren, nicht durch Teleportieren abgeschlossen.
 
-## Aktueller Nachweis (16.10.2026)
+## Aktueller Sitzpose-Nachweis (19.10.2026)
 
-Import und Headless-Start bestanden. Headless: 30 Fahr-, 102 Upgrade-, 71
-Rennpruefungen. Echte GL-Compatibility-Ausgabe auf Intel Iris Xe: 128 Upgrade-
-und 77 Rennpruefungen. Vollstaendige automatisierte Runde: `00:17.235`, ohne
-Wandkontakt. Keine manuelle Probefahrt, kein Export- oder Zielhardware-Benchmark.
+52 gezielte Sitzpose-Checks, 31 Fahr-, 79 Renn- und 205 Upgrade-Checks headless
+bestanden. Grafisch 245 Upgrade-Checks bei 1920x1080 auf Intel Iris Xe bestanden.
+Echte Front-/Seitenbilder beider Motorzustaende und die Schubansicht wurden
+angesehen. Schienbeine beeinflussen die Beckenhoehe nicht; unvereinbare Ziele
+werden gemeldet. Konservative Greifringfreiheit bleibt, keine exakte Fingergriff-
+oder Ganzkoerperphysik. Details und Grenzen: [SEATING](docs/SEATING.md).
+
+## Vorheriger Nachweis (16.10.2026)
+
+Import und Headless-Start bestanden. Nach den Reviewkorrekturen: 31 Fahr-,
+158 Upgrade- und 79 Rennpruefungen headless bestanden. Fahr-/Renntests starten
+unabhaengig vom persoenlichen Upgrade-Spielstand mit STOCK. Echte grafische
+Upgrade-Pruefung auf Intel Iris Xe: 192 bestanden bei 1280x720, danach mit
+zusaetzlichen Wechselpruefungen 198 bei 1920x1080. Inklusive Maus-/Tastatur-Orbit,
+STOCK, Skin-Geometrieabstand zu den Raedern und Motorwechseln in Bewegung.
+Front-/Seitenansichten, Schubphase und Wechselbilder visuell geprueft.
+Vollstaendige automatisierte Runde:
+`00:17.235`, ohne Wandkontakt. Speicherfehlerwarnungen in den Tests sind
+absichtlich provoziert. Keine manuelle Probefahrt und kein Export-Benchmark.
+
+Ungesicherte Bestzeiten bleiben im Arbeitsspeicher markiert. Jeder neue
+Rennversuch, Zieleinlauf und die Rueckkehr zum Hauptmenue versucht die
+Speicherung erneut, auch ohne neuen Rekord. Der Fehlerstatus bleibt bis zum
+erfolgreichen Schreiben bestehen. Bei dauerhaftem Fehler kann ein Beenden
+des Programms weiterhin ungesicherte Daten verlieren.
 
 Echte native 1080p-Vergleiche: [vorher](docs/visual-review/presentation/before-side.png),
 [nachher](docs/visual-review/presentation/after-side.png),

@@ -57,6 +57,15 @@ var main_upgrade_button: Button
 var main_exit_button: Button
 var category_back_button: Button
 var engine_back_button: Button
+var stock_button: Button
+var orbit_controls: Control
+var orbit_surface: Control
+var orbit_left_button: Button
+var orbit_front_button: Button
+var orbit_right_button: Button
+var showcase_yaw: float = 0.6
+var showcase_pitch: float = 0.16
+var orbit_dragging: bool = false
 var placeholder_back_button: Button
 var gameplay_hud_nodes: Array[Control] = []
 var frontend_page_name: String = "main"
@@ -127,6 +136,44 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and race.state == RaceController.State.READY and frontend_page_name != "main":
 		_set_frontend_page("main")
 		get_viewport().set_input_as_handled()
+
+
+func _orbit_showcase(yaw_delta: float, pitch_delta: float = 0.0) -> void:
+	if not garage_mode or race.state != RaceController.State.READY or not frontend_root.visible:
+		return
+	showcase_yaw = wrapf(showcase_yaw + yaw_delta, -PI, PI)
+	showcase_pitch = clampf(showcase_pitch + pitch_delta, 0.08, 0.45)
+	_update_showcase_camera()
+
+
+func _front_showcase() -> void:
+	if not garage_mode or race.state != RaceController.State.READY or not frontend_root.visible:
+		return
+	showcase_yaw = 0.0
+	showcase_pitch = 0.16
+	_update_showcase_camera()
+
+
+func _update_showcase_camera() -> void:
+	var target: Vector3 = player.global_position + Vector3.UP * 1.05
+	var offset := Vector3(sin(showcase_yaw) * cos(showcase_pitch), sin(showcase_pitch), -cos(showcase_yaw) * cos(showcase_pitch)) * 4.4
+	upgrade_camera.global_position = target + player.global_basis * offset
+	upgrade_camera.look_at(target)
+
+
+func _on_orbit_input(event: InputEvent) -> void:
+	if not garage_mode or race.state != RaceController.State.READY or not frontend_root.visible:
+		orbit_dragging = false
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		orbit_dragging = event.pressed
+		orbit_surface.accept_event()
+	elif event is InputEventMouseMotion:
+		if orbit_dragging and event.button_mask & MOUSE_BUTTON_MASK_LEFT:
+			_orbit_showcase(-event.relative.x * 0.008, -event.relative.y * 0.006)
+			orbit_surface.accept_event()
+		elif not event.button_mask & MOUSE_BUTTON_MASK_LEFT:
+			orbit_dragging = false
 
 
 func _reset_camera() -> void:
@@ -740,7 +787,7 @@ func _category_button(text: String) -> Button:
 
 func _engine_card(choice: Dictionary) -> Button:
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(0.0, 112.0)
+	button.custom_minimum_size = Vector2(0.0, 100.0)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.add_theme_font_size_override("font_size", 14)
 	button.add_theme_color_override("font_color", WARM_WHITE)
@@ -886,7 +933,7 @@ func _build_frontend_menu() -> void:
 	engine_page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var engines_panel := _menu_panel(engine_page, Vector4(0.035, 0.18, 0.315, 0.96))
 	var engines_contents := VBoxContainer.new()
-	engines_contents.add_theme_constant_override("separation", 9)
+	engines_contents.add_theme_constant_override("separation", 6)
 	engines_panel.add_child(engines_contents)
 	_menu_label(engines_contents, "ENGINE / POWERTRAIN", 18)
 	_menu_label(engines_contents, "SELECT ONE MOTOR", 12, Color("b4c7c1"))
@@ -896,7 +943,12 @@ func _build_frontend_menu() -> void:
 	engines_contents.add_child(engine_row)
 	for choice in upgrade_data.call("get_engine_choices"):
 		engine_row.add_child(_engine_card(choice))
+	stock_button = _race_button("STOCK / REMOVE MOTOR")
+	stock_button.add_theme_font_size_override("font_size", 16)
+	stock_button.pressed.connect(_select_engine.bind(""))
+	engines_contents.add_child(stock_button)
 	upgrade_message_label = _menu_label(engines_contents, "", 14, Color("edb777"))
+	upgrade_message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	engine_back_button = _race_button("BACK / SYSTEMS")
 	engine_back_button.pressed.connect(_open_upgrade_categories)
 	engines_contents.add_child(engine_back_button)
@@ -916,7 +968,47 @@ func _build_frontend_menu() -> void:
 	placeholder_back_button = _race_button("BACK TO UPGRADES")
 	placeholder_back_button.pressed.connect(_open_upgrade_categories)
 	placeholder_contents.add_child(placeholder_back_button)
+	_build_orbit_controls()
 	_set_frontend_page("main")
+
+
+func _build_orbit_controls() -> void:
+	orbit_controls = Control.new()
+	frontend_root.add_child(orbit_controls)
+	orbit_controls.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	orbit_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	orbit_surface = Control.new()
+	orbit_controls.add_child(orbit_surface)
+	orbit_surface.anchor_left = 0.33
+	orbit_surface.anchor_top = 0.28
+	orbit_surface.anchor_right = 0.98
+	orbit_surface.anchor_bottom = 0.85
+	orbit_surface.mouse_default_cursor_shape = Control.CURSOR_DRAG
+	orbit_surface.tooltip_text = "Ansicht mit gedrueckter linker Maustaste drehen"
+	orbit_surface.gui_input.connect(_on_orbit_input)
+	var buttons := HBoxContainer.new()
+	orbit_controls.add_child(buttons)
+	buttons.anchor_left = 0.55
+	buttons.anchor_right = 0.55
+	buttons.anchor_top = 0.94
+	buttons.anchor_bottom = 0.94
+	buttons.offset_left = -112.0
+	buttons.offset_right = 112.0
+	buttons.offset_top = -48.0
+	buttons.add_theme_constant_override("separation", 8)
+	orbit_left_button = _race_button("<")
+	orbit_front_button = _race_button("FRONT")
+	orbit_right_button = _race_button(">")
+	for button in [orbit_left_button, orbit_front_button, orbit_right_button]:
+		button.custom_minimum_size = Vector2(48.0, 48.0)
+		buttons.add_child(button)
+	orbit_front_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	orbit_left_button.tooltip_text = "Ansicht nach links drehen"
+	orbit_front_button.tooltip_text = "Vorderansicht"
+	orbit_right_button.tooltip_text = "Ansicht nach rechts drehen"
+	orbit_left_button.pressed.connect(_orbit_showcase.bind(-PI * 0.25))
+	orbit_right_button.pressed.connect(_orbit_showcase.bind(PI * 0.25))
+	orbit_front_button.pressed.connect(_front_showcase)
 
 
 func _set_frontend_page(page_name: String) -> void:
@@ -948,6 +1040,8 @@ func _set_frontend_page(page_name: String) -> void:
 
 
 func _set_showcase_mode(is_garage: bool) -> void:
+	orbit_controls.visible = is_garage
+	orbit_dragging = false
 	if garage_mode == is_garage:
 		return
 	garage_mode = is_garage
@@ -964,6 +1058,9 @@ func _set_showcase_mode(is_garage: bool) -> void:
 	frontend_shade.color = Color(0.025, 0.055, 0.06, 0.12 if is_garage else 0.38)
 	if is_garage:
 		player.rotation.y = PI - 0.9
+		showcase_yaw = 0.6
+		showcase_pitch = 0.16
+		_update_showcase_camera()
 		upgrade_camera.make_current()
 	else:
 		player.rotation.y = PI
@@ -1011,7 +1108,7 @@ func _start_game() -> void:
 func _select_engine(engine_id: String) -> void:
 	upgrade_data.call("select_engine", engine_id)
 	var save_error: String = str(upgrade_data.get("persistence_error"))
-	upgrade_message_label.text = save_error if not save_error.is_empty() else "ENGINE EQUIPPED"
+	upgrade_message_label.text = save_error if not save_error.is_empty() else ("STOCK EQUIPPED" if engine_id.is_empty() else "ENGINE EQUIPPED")
 
 
 func _refresh_upgrade_ui() -> void:
@@ -1023,6 +1120,7 @@ func _refresh_upgrade_ui() -> void:
 	stats_engine_label.text = "ENGINE  " + str(selected_engine.get("name", "STOCK"))
 	main_engine_label.text = "INSTALLED ENGINE  " + str(selected_engine.get("name", "STOCK"))
 	player.install_engine(str(selected_engine.get("visual_id", "")))
+	stock_button.text = "STOCK / EQUIPPED" if upgrade_data.get("selected_engine_id") == "" else "STOCK / REMOVE MOTOR"
 	var choices: Variant = upgrade_data.call("get_engine_choices")
 	for choice_index in range(mini(engine_buttons.size(), choices.size())):
 		var choice: Dictionary = choices[choice_index]

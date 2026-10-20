@@ -36,6 +36,7 @@ const ENGINE_CHOICES: Array[Dictionary] = [
 @export var save_path: String = DEFAULT_SAVE_PATH
 var selected_engine_id: String = ""
 var persistence_error: String = ""
+var save_pending: bool = false
 
 var max_speed_kmh: float:
 	get:
@@ -69,9 +70,10 @@ func select_engine(engine_id: String) -> bool:
 		persistence_error = "Unknown engine upgrade: " + engine_id
 		push_error(persistence_error)
 		return false
-	if selected_engine_id == engine_id:
+	if selected_engine_id == engine_id and not save_pending:
 		return true
 	selected_engine_id = engine_id
+	save_pending = true
 	var saved: bool = _save_selection()
 	stats_changed.emit()
 	return saved
@@ -80,6 +82,7 @@ func select_engine(engine_id: String) -> bool:
 func load_selection() -> void:
 	selected_engine_id = ""
 	persistence_error = ""
+	save_pending = false
 	if save_path.is_empty() or not FileAccess.file_exists(save_path):
 		return
 	var file := FileAccess.open(save_path, FileAccess.READ)
@@ -108,12 +111,12 @@ func load_selection() -> void:
 
 
 func _save_selection() -> bool:
-	persistence_error = ""
 	if save_path.is_empty():
 		persistence_error = "Player upgrade save path is empty."
 		push_warning(persistence_error)
 		return false
-	var file := FileAccess.open(save_path, FileAccess.WRITE)
+	var temporary_path: String = save_path + ".tmp"
+	var file := FileAccess.open(temporary_path, FileAccess.WRITE)
 	if file == null:
 		persistence_error = "Could not write the player upgrade save."
 		push_warning(persistence_error)
@@ -126,10 +129,22 @@ func _save_selection() -> bool:
 	var write_error: Error = file.get_error()
 	file.close()
 	if write_error != OK:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temporary_path))
 		persistence_error = "Could not finish writing the player upgrade save."
 		push_warning(persistence_error)
 		return false
+	if _replace_selection_file(temporary_path) != OK:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temporary_path))
+		persistence_error = "Could not replace the player upgrade save. Select the engine again to retry."
+		push_warning(persistence_error)
+		return false
+	save_pending = false
+	persistence_error = ""
 	return true
+
+
+func _replace_selection_file(temporary_path: String) -> Error:
+	return DirAccess.rename_absolute(ProjectSettings.globalize_path(temporary_path), ProjectSettings.globalize_path(save_path))
 
 
 func _has_engine(engine_id: String) -> bool:

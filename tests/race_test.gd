@@ -2,6 +2,7 @@ extends SceneTree
 
 const MainScene = preload("res://scenes/main.tscn")
 const RaceController = preload("res://scripts/race.gd")
+const PlayerUpgradeData = preload("res://scripts/player_upgrades.gd")
 
 var game: Node3D
 var failures: Array[String] = []
@@ -115,6 +116,15 @@ func _run() -> void:
 	test_directory = "user://race-tests-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()]
 	test_path = test_directory + "/best.json"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(test_directory))
+	var upgrades: Node = root.get_node_or_null("PlayerUpgrades")
+	if upgrades == null:
+		upgrades = PlayerUpgradeData.new()
+		upgrades.name = "PlayerUpgrades"
+		upgrades.save_path = ""
+		root.add_child(upgrades)
+	upgrades.save_path = ""
+	upgrades.load_selection()
+	_check(upgrades.max_speed_kmh == 65.0 and upgrades.acceleration_kmh_per_second == 35.0, "Race tests use isolated STOCK stats")
 	game = MainScene.instantiate()
 	game.best_time_path = test_path
 	root.add_child(game)
@@ -243,7 +253,19 @@ func _run() -> void:
 	game.race.save_path = test_directory + "/missing/best.json"
 	_finish_with_time(50.0)
 	_check(game.race.state == RaceController.State.FINISHED and game.race.save_failed, "Unwritable save does not prevent a valid result")
+	await _begin()
+	_check(game.race.save_failed and game.race.save_pending, "Restart retains an unsaved record and failed status")
+	_finish_with_time(55.0)
+	_check(game.race.best_ms == 50000 and game.race.save_pending, "A slower finish retains the faster unsaved record")
 	game.race.save_path = test_path
+	await _begin()
+	_check(not game.race.save_failed and not game.race.save_pending and loader._load_best() == 50000, "Restart retries the same record after storage recovers")
+	game.race.save_path = test_directory + "/missing/best.json"
+	_finish_with_time(45.0)
+	await _begin()
+	game.race.save_path = test_path
+	_finish_with_time(48.0)
+	_check(not game.race.new_record and not game.race.save_pending and loader._load_best() == 45000, "A slower finish also retries the faster pending record")
 	loader.free()
 	await _drive_complete_lap()
 	paused = false

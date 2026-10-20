@@ -9,6 +9,8 @@ const ROLLING_RESISTANCE: float = 3.0
 const STEERING_SPEED: float = 1.8
 const WHEEL_RADIUS: float = 0.53
 
+@export var seating_profile: Resource = preload("res://assets/wheelchair/seating.tres")
+
 var MAX_SPEED: float:
 	get:
 		return float(get_node("/root/PlayerUpgrades").get("max_speed_kmh")) / 3.6
@@ -172,6 +174,7 @@ func _respawn(target: Transform3D) -> void:
 func _build_model() -> void:
 	visuals = RacerVisuals.new()
 	visuals.name = "Presentation"
+	visuals.seating = seating_profile
 	add_child(visuals)
 	rear_wheels = visuals.rear_wheels
 	front_forks = visuals.front_forks

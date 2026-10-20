@@ -1,6 +1,7 @@
 extends SceneTree
 
 const MainScene = preload("res://scenes/main.tscn")
+const PlayerUpgradeData = preload("res://scripts/player_upgrades.gd")
 
 var game: Node3D
 var failures: Array[String] = []
@@ -69,6 +70,15 @@ func _run() -> void:
 				mapped = true
 		_check(mapped, "Physical key mapping: " + action)
 
+	var upgrades: Node = root.get_node_or_null("PlayerUpgrades")
+	if upgrades == null:
+		upgrades = PlayerUpgradeData.new()
+		upgrades.name = "PlayerUpgrades"
+		upgrades.save_path = ""
+		root.add_child(upgrades)
+	upgrades.save_path = ""
+	upgrades.load_selection()
+	_check(upgrades.max_speed_kmh == 65.0 and upgrades.acceleration_kmh_per_second == 35.0, "Smoke tests use isolated STOCK stats")
 	game = MainScene.instantiate()
 	game.best_time_path = ""
 	root.add_child(game)
